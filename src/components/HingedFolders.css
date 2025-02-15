@@ -1,0 +1,313 @@
+/*****************************************************
+ * The wrapper provides a fixed, static black background.
+ *****************************************************/
+ .hinge-wrapper {
+  width: 400px;
+  height: 400px;
+  margin: 0 auto;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/*****************************************************
+ * The scene holds the cards, background folder, hinge bars, 
+ * and the top letter tabs.
+ * Its perspective creates the 3D flip effect.
+ *****************************************************/
+.scene {
+  width: 250px;
+  height: 300px;
+  position: relative;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+/*****************************************************
+ * Base style for folder tabs.
+ *****************************************************/
+.folder-tab {
+  text-align: center;
+  padding: 2px 5px;
+  width: 20px;
+  height: 18px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+/*****************************************************
+ * Built‑in top tab on the card.
+ *****************************************************/
+.top-tab {
+  position: absolute;
+  top: -24px;
+  background: #fff;
+  color: #000;
+  border: 1px solid transparent;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*****************************************************
+ * Top letter tab (rendered above the card).
+ * Its left position is computed to align with the 
+ * folder’s built‑in tab.
+ *****************************************************/
+.top-letter-tab {
+  position: absolute;
+  top: -24px;
+  background: #fff;
+  color: #000;
+  border: 1px solid transparent;
+  /* Animate background-color and margin-top changes when they update */
+  transition: background-color 0.3s ease, margin-top 0.5s ease;
+  /* When a new tab appears, animate it with a fade in and slide up */
+  animation: fadeInUp 0.3s ease-out;
+  animation-fill-mode: forwards;
+}
+
+/*****************************************************
+ * Bottom tab styles (for the preserved tab).
+ *****************************************************/
+ .bottom-tab {
+  position: absolute;
+
+  border: 2px solid #fff;
+  z-index: 0;
+  text-align: center;
+  padding: 2px 5px;
+  width: 20px;
+  border-top:2px solid #000 !important; 
+  height: 18px;
+  border-radius: 4px;
+}
+
+/*****************************************************
+ * Cards and card faces.
+ *****************************************************/
+.card {
+  position: absolute;
+  width: 200px;
+  height: 120px;
+  left: 50%;
+  z-index: 100;
+  transform-style: preserve-3d;
+  transform: translateX(-50%);
+}
+
+.top-card {
+  top: 0;
+  z-index: 100;
+}
+
+.bottom-card {
+  bottom: 40px;
+  transform: translateX(-50%) rotateX(180deg);
+  z-index: 99;
+}
+
+.card-face {
+  margin-left: -2px;
+  position: absolute;
+  width: 200px;
+  height: 123px;
+  border: 2px solid rgb(255, 255, 255);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  box-sizing: border-box;
+}
+
+.front {
+  background: #000;
+  color: rgb(255, 255, 255);
+}
+
+.back {
+  background: #000;
+  transform: rotateX(180deg);
+}
+
+.card-text {
+  font-size: xx-large;
+  font-weight: 100;
+}
+
+/*****************************************************
+ * Background folder element.
+ *****************************************************/
+.background-folder {
+  position: absolute;
+  margin-left: -2px;
+  width: 196px;
+  height: 120px;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  z-index: 100;
+  border: 2px solid rgb(255, 255, 255);
+  border-radius: 10px;
+  background: #000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: rgb(255, 255, 255);
+}
+
+/*****************************************************
+ * Hinge bars (decorative).
+ *****************************************************/
+.hinge-bar {
+  position: absolute;
+  width: 8px;
+  height: 37px;
+  border-radius: 10px;
+  background: rgb(255, 255, 255);
+  top: 112px;
+  z-index: 999;
+}
+.hinge-left {
+  left: 75px;
+}
+.hinge-right {
+  right: 75px;
+}
+
+/*****************************************************
+ * Flip Animation for the top card.
+ * It rotates along the X‑axis and translates downward.
+ *****************************************************/
+@keyframes flipForward {
+  0% {
+    transform: translate(-50%, 0) rotateX(0deg);
+  }
+  100% {
+    transform: translate(-50%, 20px) rotateX(-180deg);
+  }
+}
+.top-card.flip-forward {
+  animation: flipForward 0.2s ease forwards;
+  transform-origin: bottom center;
+}
+
+/*****************************************************
+ * Container that holds both left and right sets of bars.
+ *****************************************************/
+.side-bars-container {
+  position: absolute;
+  /* Adjust top to place them between the two folder cards */
+  top: 95px;
+  margin-left: -10px;   
+  left: 0;
+  right: 5px;
+  height: 70px; /* the bars are confined to 70px in height */
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  z-index: 999;
+}
+
+/*****************************************************
+ * The "side-bars" containers for left and right
+ *****************************************************/
+.side-bars {
+  position: relative;
+  width: 10px; 
+  height: 100%;
+}
+
+.side-bars-left {
+  /* no extra positioning needed */
+}
+.side-bars-right {
+  /* likewise for the right side */
+}
+
+/*****************************************************
+ * The individual bar lines (red bars).
+ * We remove .bar-1 { top: ... } etc. 
+ * Now we only define the common style. 
+ *****************************************************/
+.red-bar {
+  position: absolute;
+  left: 0; 
+  right: 0;  
+  margin: auto;            /* horizontally center in the 10px space */
+  width: 22px;             /* bar length */
+  height: 2px; 
+  background: rgb(255, 255, 255); 
+  border-radius: 2px;
+  /* 'top' is computed inline in JSX */
+}
+/*****************************************************
+ * (…other existing CSS remains unchanged)
+ *****************************************************/
+
+/* Increase horizontal margins so the left/right side‐bars are farther apart */
+
+
+/* The individual side‑bars remain the same */
+.side-bars {
+  position: relative;
+  width: 10px;
+  height: 100%;
+}
+
+/* Moving (scrolling) red bars (common style) */
+.red-bar {
+  position: absolute;
+  left: 0; 
+  right: 0;  
+  margin: auto;
+  width: 22px;
+  height: 2px; 
+  background: rgb(255, 255, 255); 
+  border-radius: 2px;
+  transition: top 0.1s linear; /* Adjust timing as desired */
+}
+
+/* Static red bars – disable any transition */
+.red-bar.static {
+  transition: none;
+}
+.red-bar.no-animation {
+  transition: none !important;
+}
+.bottom-letter-tab {
+  position: absolute;
+  bottom: 18px; /* Adjust this value to control vertical placement */
+  background: #000;
+  z-index: -100;
+  color: #000;
+  border: 1px solid White;
+  border-top-color: 1px solid  #000;
+  /* Animate background-color and margin-bottom changes when updated */
+  transition: background-color 0.3s ease, margin-bottom 0.5s ease;
+  /* When a new tab appears, animate it with a fade in and slide up */
+
+  animation-fill-mode: forwards;
+}
+.folder-tab.bottom-letter-tab {
+  position: absolute;
+  bottom: -24px; /* adjust as needed */
+  background: #fff;
+  color: #000; /* sets text to black for visibility */
+  border: 1px solid transparent;
+  transition: background-color 0.3s ease, margin-bottom 0.5s ease;
+  animation: fadeInUp 0.3s ease-out;
+  animation-fill-mode: forwards;
+}
