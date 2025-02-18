@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useLayoutEffect, useState } from "react";
 
 export interface CellData {
   digit: number | null;
@@ -40,7 +40,7 @@ const GridCell: React.FC<GridCellProps> = ({
   // Use useLayoutEffect so that we update before the browser paints.
   useLayoutEffect(() => {
     // Increment version to force a remount.
-    setVersion(v => v + 1);
+    setVersion((v) => v + 1);
     setSpawnComplete(false);
     // Start with the element hidden.
     setStartAnimation(false);
@@ -61,12 +61,19 @@ const GridCell: React.FC<GridCellProps> = ({
   };
 
   const handleAnimationEnd = (e: React.AnimationEvent<HTMLSpanElement>) => {
-    if (e.animationName === 'spawnScale' && !spawnComplete) {
+    if (e.animationName === "spawnScale" && !spawnComplete) {
       setSpawnComplete(true);
     }
   };
 
-  const visitedStyle = isVisited ? { color: 'red' } : {};
+  const visitedStyle = isVisited
+    ? {
+        color: "white",
+        opacity: "100%",
+        fontWeight: "bold",
+        textShadow: "#fff 0px 0 10px",
+      }
+    : {};
 
   let animationStyle = {};
   if (!spawnComplete) {
@@ -82,12 +89,12 @@ const GridCell: React.FC<GridCellProps> = ({
 
   // Until startAnimation is true, force the element into its initial (hidden) state.
   const combinedStyle: React.CSSProperties = startAnimation
-    ? { ...animationStyle, willChange: 'opacity, transform' }
+    ? { ...animationStyle, willChange: "opacity, transform" }
     : {
-        visibility: 'hidden',
+        visibility: "hidden",
         opacity: 0,
-        transform: 'scale(0)',
-        willChange: 'opacity, transform',
+        transform: "scale(0)",
+        willChange: "opacity, transform",
         ...visitedStyle,
       };
 
@@ -96,21 +103,22 @@ const GridCell: React.FC<GridCellProps> = ({
       style={{
         width: `${cellWidth}px`,
         height: `${cellHeight}px`,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        color: "#ddd",
       }}
-      onMouseEnter={onHover}
-    >
+      onMouseEnter={onHover}>
       <div className={`cellScale ${scaleClass}`}>
         {visible ? (
           <span
             key={version}
             style={combinedStyle}
             onAnimationEnd={handleAnimationEnd}
-            className={spawnComplete && !isStatic && visible ? 'cellAnimate' : ''}
-          >
-            {cellData.digit !== null ? cellData.digit : ''}
+            className={
+              spawnComplete && !isStatic && visible ? "cellAnimate" : ""
+            }>
+            {cellData.digit !== null ? cellData.digit : ""}
           </span>
         ) : null}
       </div>

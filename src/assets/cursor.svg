@@ -1,0 +1,19 @@
+<svg
+    
+
+      
+        d="
+          M 10 10
+          L 60 10
+          L 80 30
+          L 50 60
+          L 30 50
+          Z
+        "
+        fill="none"
+        stroke="#fff"
+        strokeWidth="8"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+ 
+    </svg>

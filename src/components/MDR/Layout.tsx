@@ -1,40 +1,55 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import Header from './Header';
-import Grid from './Grid';
-import FooterBar from './FooterBar';
-import FooterText from './FooterText';
-import AnimationStyles from './AnimationStyles';
-import { ShapeType } from './shapeDefinitions';
-import FlyToBoxOverlay, { FlyDigit } from './FlyToBoxOverlay';
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import Header from "./Header";
+import Grid from "./Grid";
+import FooterBar from "./FooterBar";
+import FooterText from "./FooterText";
+import AnimationStyles from "./AnimationStyles";
+import { ShapeType } from "./shapeDefinitions";
+import FlyToBoxOverlay, { FlyDigit } from "./FlyToBoxOverlay";
+import { Settings } from "./../Settings";
 
 interface SeveranceMDRLayoutProps {
   headerText: string;
   percentage: string;
   logoUrl?: string;
+  settings: Settings;
 }
 
 const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
   headerText,
   percentage,
   logoUrl,
+  settings,
 }) => {
-  const containerWidth = 1220;
-  const containerHeight = 720;
-  const headerHeight = 40;
-  const gridHeight = containerHeight - headerHeight - 100;
-  const rows = 15;
-  const cols = 38;
+  // Destructure settings values
+  const {
+    containerWidth,
+    containerHeight,
+    msToHelp,
+    rows,
+    cols,
+    headerHeight,
+    shapePerType,
+  } = settings;
+
+  const gridHeight = containerHeight - headerHeight - 170;
   const cellWidth = 24;
   const cellHeight = 32;
   const rowGap = 8;
   const colGap = 8;
   const lineStyle: React.CSSProperties = {
     margin: 0,
-    border: '1px solid white',
+    border: "1px solid white",
+  };
+  const lineStyleBlack: React.CSSProperties = {
+    margin: 0,
+    border: "1px solid black",
   };
 
   // Footer progress state.
-  const [footerProgress, setFooterProgress] = useState<Record<ShapeType, number>>({
+  const [footerProgress, setFooterProgress] = useState<
+    Record<ShapeType, number>
+  >({
     plus: 0,
     L: 0,
     T: 0,
@@ -57,33 +72,41 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
 
   // Compute header percentage.
   const headerPercentage = useMemo(() => {
-    const completeCount = Object.values(footerProgress).filter(val => val === 100).length;
+    const completeCount = Object.values(footerProgress).filter(
+      (val) => val === 100
+    ).length;
     return completeCount * 20;
   }, [footerProgress]);
 
-  // --- NEW: Alert "gg" if header is 100% and all boxes are closed ---
+  // --- Alert "gg" if header is 100% and all boxes are closed ---
   const alertedGG = useRef(false);
   useEffect(() => {
-    if (headerPercentage === 100 && openFooterBox === null && !alertedGG.current) {
+    if (
+      headerPercentage === 100 &&
+      openFooterBox === null &&
+      !alertedGG.current
+    ) {
       alertedGG.current = true;
       const timer = setTimeout(() => {
         alert("gg");
-      }, 1500); // Wait 1 second before alerting
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [headerPercentage, openFooterBox]);
   // --------------------------------------------------------------------
 
   // Determine the bounding rect of the currently open footer box.
-  const [targetFooterBoxRect, setTargetFooterBoxRect] = useState<DOMRect | null>(null);
+  const [targetFooterBoxRect, setTargetFooterBoxRect] =
+    useState<DOMRect | null>(null);
   useEffect(() => {
     if (openFooterBox !== null && footerBoxRefs.current[openFooterBox - 1]) {
-      const rect = footerBoxRefs.current[openFooterBox - 1]!.getBoundingClientRect();
+      const rect =
+        footerBoxRefs.current[openFooterBox - 1]!.getBoundingClientRect();
       setTargetFooterBoxRect(rect);
     }
   }, [openFooterBox]);
 
-  // Track which shape just completed so that its cells can refresh.
+  // Track which shape just completed so that Grid refreshes only its cells.
   const [completedShapeId, setCompletedShapeId] = useState<number | null>(null);
 
   // Called when a shape’s fly animation starts.
@@ -94,7 +117,6 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
 
   // Called when the fly animation ends.
   const handleAnimationEnd = () => {
-    // Set the completed shape so that Grid refreshes only its cells.
     setCompletedShapeId(animatingShapeId);
     setFlyDigits([]);
     setAnimatingShapeId(null);
@@ -106,40 +128,56 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
       <div
         style={{
           width: `${containerWidth}px`,
-          height: `${containerHeight}px`,
-          backgroundColor: 'black',
-          color: 'white',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          outline: 'none',
-          animation: 'fadeIn 1s ease-out forwards',
-        }}
-      >
-        <Header headerText={headerText} percentage={headerPercentage} logoUrl={logoUrl} />
-        <hr style={lineStyle} />
-        <hr style={lineStyle} />
-        <Grid
-          containerWidth={containerWidth}
-          containerHeight={gridHeight}
-          rows={rows}
-          cols={cols}
-          cellWidth={cellWidth}
-          cellHeight={cellHeight}
-          rowGap={rowGap}
-          colGap={colGap}
-          onShapeCompleted={(shapeType: ShapeType) =>
-            setFooterProgress(prev => ({ ...prev, [shapeType]: 100 }))
-          }
-          openFooterBox={openFooterBox}
-          targetFooterBoxRect={targetFooterBoxRect}
-          onAnimationStart={handleAnimationStart}
-          refreshCompletedShapeId={completedShapeId}
-          onShapeRefreshed={() => setCompletedShapeId(null)}
+          height: `${containerHeight + 60}px`,
+          marginBottom: "5px",
+          backgroundColor: "black",
+          color: "white",
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          outline: "none",
+          animation: "fadeIn 1s ease-out forwards",
+        }}>
+        <Header
+          headerText={headerText}
+          percentage={headerPercentage}
+          logoUrl={logoUrl}
         />
         <hr style={lineStyle} />
+        <hr style={lineStyleBlack} />
         <hr style={lineStyle} />
-        <div style={{ position: 'relative', zIndex: 11000 }}>
+        <div style={{ padding: "0px" }}>
+          <Grid
+            msToHelp={msToHelp}
+            shapePerType={shapePerType}
+            containerWidth={containerWidth}
+            containerHeight={gridHeight}
+            rows={rows}
+            cols={cols}
+            cellWidth={cellWidth}
+            cellHeight={cellHeight}
+            rowGap={rowGap}
+            colGap={colGap}
+            onShapeCompleted={(shapeType: ShapeType) =>
+              setFooterProgress((prev) => ({
+                ...prev,
+                [shapeType]: Math.min(
+                  prev[shapeType] + 100 / shapePerType,
+                  100
+                ),
+              }))
+            }
+            openFooterBox={openFooterBox}
+            targetFooterBoxRect={targetFooterBoxRect}
+            onAnimationStart={handleAnimationStart}
+            refreshCompletedShapeId={completedShapeId}
+            onShapeRefreshed={() => setCompletedShapeId(null)}
+          />
+        </div>
+        <hr style={lineStyle} />
+        <hr style={lineStyleBlack} />
+        <hr style={lineStyle} />
+        <div style={{ position: "relative", zIndex: 11000 }}>
           <FooterBar
             progress={footerProgress}
             openBox={openFooterBox}
@@ -152,7 +190,10 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
       </div>
 
       {flyDigits.length > 0 && (
-        <FlyToBoxOverlay flyDigits={flyDigits} onAnimationEnd={handleAnimationEnd} />
+        <FlyToBoxOverlay
+          flyDigits={flyDigits}
+          onAnimationEnd={handleAnimationEnd}
+        />
       )}
     </>
   );

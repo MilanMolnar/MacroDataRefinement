@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "./HingedFolders.css";
 
-interface Folder {
+export interface Folder {
   id: number;
   name: string;
 }
 
+// Default folder data.
 const folderData: Folder[] = [
   { id: 1, name: "AFldr1" },
   { id: 2, name: "AFldr2" },
@@ -61,7 +62,10 @@ const folderData: Folder[] = [
 
 // Constants for the scrolling bars remain unchanged.
 const NUM_BARS = 8;
-const BASE_POSITIONS = Array.from({ length: NUM_BARS }, (_, i) => i * (100 / NUM_BARS));
+const BASE_POSITIONS = Array.from(
+  { length: NUM_BARS },
+  (_, i) => i * (100 / NUM_BARS)
+);
 const SPEED_MULTIPLIERS = Array.from({ length: NUM_BARS }, () => 1);
 const SCROLL_MULTIPLIER = 0.1;
 
@@ -72,33 +76,47 @@ interface BottomTab {
   lifetime: number; // How many flips/scrolls remain before removal
 }
 
-const HingedFolders: React.FC = () => {
+// Define the props for our component.
+interface HingedFoldersProps {
+  folders?: Folder[];
+  onFolderSelect?: (folderName: string) => void;
+}
+
+const HingedFolders: React.FC<HingedFoldersProps> = ({
+  folders = folderData,
+  onFolderSelect,
+}) => {
+  // Sort the folders alphabetically by name before any processing.
+  const sortedFolders = useMemo(() => {
+    return [...folders].sort((a, b) => a.name.localeCompare(b.name));
+  }, [folders]);
+
   // currentIndex is the index of the folder shown on the top card.
   const [currentIndex, setCurrentIndex] = useState(0);
   // isFlipping tells whether the top card is currently animating.
   const [isFlipping, setIsFlipping] = useState(false);
-  // removedTabs is used for the top tabs (unchanged from your code).
+  // removedTabs is used for the top tabs.
   const [removedTabs, setRemovedTabs] = useState<Set<string>>(new Set());
   // barsOffset is used for the side-bars parallax effect.
   const [barsOffset, setBarsOffset] = useState(0);
-  // NEW: bottomTabs holds our bottom‑letter‑tabs that will persist for 3 flips.
+  // bottomTabs holds our bottom‑letter‑tabs that will persist for 3 flips.
   const [bottomTabs, setBottomTabs] = useState<BottomTab[]>([]);
 
-  const nextIndex = (currentIndex + 1) % folderData.length;
-  const currentFolder = folderData[currentIndex].name;
-  const nextFolder = folderData[nextIndex].name;
+  const nextIndex = (currentIndex + 1) % sortedFolders.length;
+  const currentFolder = sortedFolders[currentIndex].name;
+  const nextFolder = sortedFolders[nextIndex].name;
 
   // Map each letter to its first occurrence index.
   const firstOccurrenceMap = useMemo(() => {
     const map = new Map<string, number>();
-    folderData.forEach((folder, index) => {
+    sortedFolders.forEach((folder, index) => {
       const letter = folder.name[0].toUpperCase();
       if (!map.has(letter)) {
         map.set(letter, index);
       }
     });
     return map;
-  }, []);
+  }, [sortedFolders]);
 
   // Each unique letter gets a random horizontal offset.
   const folderTabOffsets = useMemo(() => {
@@ -118,9 +136,12 @@ const HingedFolders: React.FC = () => {
 
   // Compute which top-letter tabs remain visible (up to 3).
   const visibleLetterTabs = useMemo(() => {
-    const available = letterTabs.filter(({ letter }) => !removedTabs.has(letter));
+    const available = letterTabs.filter(
+      ({ letter }) => !removedTabs.has(letter)
+    );
     const sortedByDistance = [...available].sort(
-      (a, b) => Math.abs(currentIndex - a.index) - Math.abs(currentIndex - b.index)
+      (a, b) =>
+        Math.abs(currentIndex - a.index) - Math.abs(currentIndex - b.index)
     );
     const top3 = sortedByDistance.slice(0, 3);
     return top3.sort((a, b) => a.index - b.index);
@@ -132,41 +153,45 @@ const HingedFolders: React.FC = () => {
       // Only allow scrolling down.
       if (e.deltaY <= 0) return;
       e.preventDefault();
-      
+
       // If not already flipping, trigger the flip.
       if (!isFlipping) {
         const letter = currentFolder[0].toUpperCase();
-        // If this folder is the first occurrence for its letter, update removedTabs
+        // If this folder is the first occurrence for its letter, update removedTabs.
         if (firstOccurrenceMap.get(letter) === currentIndex) {
           setRemovedTabs((prev) => new Set(prev).add(letter));
         }
         setIsFlipping(true);
       }
-      
+
       // Clamp and reverse the scroll for the side-bars.
       const MAX_DELTA = 50;
       const clampedDelta = Math.min(e.deltaY, MAX_DELTA);
       setBarsOffset((prev) => prev + clampedDelta * SCROLL_MULTIPLIER);
     };
-  
+
     window.addEventListener("wheel", handleWheel, { passive: false });
     return () => window.removeEventListener("wheel", handleWheel);
   }, [isFlipping, currentIndex, currentFolder, firstOccurrenceMap]);
 
-  // MODIFIED: When the flip animation ends, update currentIndex and update the bottom tabs.
+  // When the flip animation ends, update currentIndex and update the bottom tabs.
   const handleAnimationEnd = () => {
     // Update our bottomTabs: decrement each tab’s lifetime and remove any expired tabs.
     setBottomTabs((prevTabs) => {
       const updatedTabs = prevTabs
         .map((tab) => ({ ...tab, lifetime: tab.lifetime - 1 }))
         .filter((tab) => tab.lifetime > 0);
-      
+
       // If the folder that just flipped is a first occurrence, add a new bottom tab.
-      const currentLetter = folderData[currentIndex].name[0].toUpperCase();
+      const currentLetter = sortedFolders[currentIndex].name[0].toUpperCase();
       if (firstOccurrenceMap.get(currentLetter) === currentIndex) {
-        updatedTabs.push({ letter: currentLetter, index: currentIndex, lifetime: 4 });
+        updatedTabs.push({
+          letter: currentLetter,
+          index: currentIndex,
+          lifetime: 4,
+        });
       }
-      
+
       // Ensure we show at most 3 bottom tabs.
       if (updatedTabs.length > 3) {
         updatedTabs.sort((a, b) => a.index - b.index);
@@ -174,8 +199,8 @@ const HingedFolders: React.FC = () => {
       }
       return updatedTabs;
     });
-    
-    if (currentIndex === folderData.length - 1) {
+
+    if (currentIndex === sortedFolders.length - 1) {
       setRemovedTabs(new Set());
     }
     setCurrentIndex(nextIndex);
@@ -185,7 +210,7 @@ const HingedFolders: React.FC = () => {
   return (
     <div className="hinge-wrapper">
       <div className="scene">
-        {/* Render the top letter tabs as before */}
+        {/* Render the top letter tabs */}
         {visibleLetterTabs.map(({ letter, index }) => {
           const distance = Math.abs(currentIndex - index);
           const brightness = Math.max(200, 255 - distance * 10);
@@ -200,37 +225,36 @@ const HingedFolders: React.FC = () => {
                 backgroundColor,
                 zIndex,
                 marginTop: distance * 1.3,
-              }}
-            >
+              }}>
               {letter}
             </div>
           );
         })}
 
-        {/* NEW: Render the bottom letter tabs (up to 3) */}
+        {/* Render the bottom letter tabs (up to 3) */}
         {bottomTabs.map((tab) => {
-  // We use (3 - lifetime) as a “distance” measure.
-  const distance = 4 - tab.lifetime;
-  // Compute a border brightness that fades from white to a grayer tone.
-  // For a new tab (distance = 0) the border is white (255); for older tabs it gets darker.
-  const borderBrightness = Math.max(150, 255 - distance * 30);
-  const borderColor = `rgb(${borderBrightness}, ${borderBrightness}, ${borderBrightness})`;
-  const zIndex = 100 - distance;
-  return (
-    <div
-      key={tab.letter}
-      className="bottom-letter-tab bottom-tab"
-      style={{
-        left: `calc(50% - 100px + ${folderTabOffsets.get(tab.index)}px)`,
-        backgroundColor: "#000", // Always black
-        border: `2px solid ${borderColor}`, // Fading border
-        zIndex,
-        marginBottom: distance * 1.3
-      }}
-    >
-    </div>
-  );
-})}
+          // We use (3 - lifetime) as a “distance” measure.
+          const distance = 4 - tab.lifetime;
+          // Compute a border brightness that fades from white to a grayer tone.
+          const borderBrightness = Math.max(150, 255 - distance * 30);
+          const borderColor = `rgb(${borderBrightness}, ${borderBrightness}, ${borderBrightness})`;
+          const zIndex = 100 - distance;
+          return (
+            <div
+              key={tab.letter}
+              className="bottom-letter-tab bottom-tab"
+              style={{
+                left: `calc(50% - 100px + ${folderTabOffsets.get(
+                  tab.index
+                )}px)`,
+                backgroundColor: "#000", // Always black
+                border: `2px solid ${borderColor}`, // Fading border
+                zIndex,
+                marginBottom: distance * 1.3,
+              }}
+            />
+          );
+        })}
 
         {/* The background folder (with next folder name) */}
         <div className="background-folder">
@@ -241,15 +265,19 @@ const HingedFolders: React.FC = () => {
         <div
           className={`card top-card ${isFlipping ? "flip-forward" : ""}`}
           onAnimationEnd={handleAnimationEnd}
-        >
+          onClick={() => {
+            if (!isFlipping && onFolderSelect) {
+              onFolderSelect(currentFolder);
+            }
+          }}>
           <div className="card-face front">
             <span className="card-text">{currentFolder}</span>
             {/* Built‑in top tab if this folder is the first occurrence */}
-            {firstOccurrenceMap.get(currentFolder[0].toUpperCase()) === currentIndex && (
+            {firstOccurrenceMap.get(currentFolder[0].toUpperCase()) ===
+              currentIndex && (
               <div
                 className="folder-tab top-tab"
-                style={{ left: folderTabOffsets.get(currentIndex) + "px" }}
-              >
+                style={{ left: folderTabOffsets.get(currentIndex) + "px" }}>
                 {currentFolder[0].toUpperCase()}
               </div>
             )}
@@ -262,8 +290,6 @@ const HingedFolders: React.FC = () => {
           <div className="card-face front" />
           <div className="card-face back" />
         </div>
-
-        {/* (Remove the previous single bottom-tab that used prevFolderIndex) */}
 
         {/* Hinge bars */}
         <div className="hinge-bar hinge-left" />
@@ -357,5 +383,3 @@ const HingedFolders: React.FC = () => {
 };
 
 export default HingedFolders;
-
-//TODO: bottom tab should fade out and move up, z index is wrong, adn when appearing it should just fadein fast or no Animation, no letter and top border black and no round so it looks connected to fodler

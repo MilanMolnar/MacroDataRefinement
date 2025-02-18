@@ -1,7 +1,7 @@
 /*****************************************************
  * The wrapper provides a fixed, static black background.
  *****************************************************/
- .hinge-wrapper {
+.hinge-wrapper {
   width: 400px;
   height: 400px;
   margin: 0 auto;
@@ -41,7 +41,7 @@
  *****************************************************/
 .top-tab {
   position: absolute;
-  top: -24px;
+  top: -25px;
   background: #fff;
   color: #000;
   border: 1px solid transparent;
@@ -79,7 +79,7 @@
 /*****************************************************
  * Bottom tab styles (for the preserved tab).
  *****************************************************/
- .bottom-tab {
+.bottom-tab {
   position: absolute;
 
   border: 2px solid #fff;
@@ -87,7 +87,7 @@
   text-align: center;
   padding: 2px 5px;
   width: 20px;
-  border-top:2px solid #000 !important; 
+  border-top: 2px solid #000 !important;
   height: 18px;
   border-radius: 4px;
 }
@@ -211,7 +211,7 @@
   position: absolute;
   /* Adjust top to place them between the two folder cards */
   top: 95px;
-  margin-left: -10px;   
+  margin-left: -10px;
   left: 0;
   right: 5px;
   height: 70px; /* the bars are confined to 70px in height */
@@ -226,7 +226,7 @@
  *****************************************************/
 .side-bars {
   position: relative;
-  width: 10px; 
+  width: 10px;
   height: 100%;
 }
 
@@ -244,12 +244,12 @@
  *****************************************************/
 .red-bar {
   position: absolute;
-  left: 0; 
-  right: 0;  
-  margin: auto;            /* horizontally center in the 10px space */
-  width: 22px;             /* bar length */
-  height: 2px; 
-  background: rgb(255, 255, 255); 
+  left: 0;
+  right: 0;
+  margin: auto; /* horizontally center in the 10px space */
+  width: 22px; /* bar length */
+  height: 2px;
+  background: rgb(255, 255, 255);
   border-radius: 2px;
   /* 'top' is computed inline in JSX */
 }
@@ -258,7 +258,6 @@
  *****************************************************/
 
 /* Increase horizontal margins so the left/right side‐bars are farther apart */
-
 
 /* The individual side‑bars remain the same */
 .side-bars {
@@ -270,12 +269,12 @@
 /* Moving (scrolling) red bars (common style) */
 .red-bar {
   position: absolute;
-  left: 0; 
-  right: 0;  
+  left: 0;
+  right: 0;
   margin: auto;
   width: 22px;
-  height: 2px; 
-  background: rgb(255, 255, 255); 
+  height: 2px;
+  background: rgb(255, 255, 255);
   border-radius: 2px;
   transition: top 0.1s linear; /* Adjust timing as desired */
 }
@@ -294,7 +293,7 @@
   z-index: -100;
   color: #000;
   border: 1px solid White;
-  border-top-color: 1px solid  #000;
+  border-top-color: 1px solid #000;
   /* Animate background-color and margin-bottom changes when updated */
   transition: background-color 0.3s ease, margin-bottom 0.5s ease;
   /* When a new tab appears, animate it with a fade in and slide up */

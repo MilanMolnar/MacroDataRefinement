@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import GridCell, { CellData } from './GridCell';
-import { shapeDefinitions, ShapeType } from './shapeDefinitions';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import GridCell, { CellData } from "./GridCell";
+import { shapeDefinitions, ShapeType } from "./shapeDefinitions";
 
 export interface Shape {
   id: number;
@@ -25,6 +25,7 @@ export interface FlyDigit {
 }
 
 interface GridProps {
+  shapePerType: number;
   containerWidth: number;
   containerHeight: number;
   rows: number;
@@ -33,15 +34,17 @@ interface GridProps {
   cellHeight: number;
   rowGap: number;
   colGap: number;
+  msToHelp: number;
   onShapeCompleted: (shapeType: ShapeType) => void;
   openFooterBox: number | null;
   targetFooterBoxRect: DOMRect | null;
   onAnimationStart: (flyDigits: FlyDigit[], shapeId: number) => void;
-  refreshCompletedShapeId: number | null; // NEW: ID of shape whose cells should refresh
-  onShapeRefreshed: () => void;            // NEW: Callback after refresh is done
+  refreshCompletedShapeId: number | null; // ID of shape whose cells should refresh
+  onShapeRefreshed: () => void; // Callback after refresh is done
 }
 
 const Grid: React.FC<GridProps> = ({
+  shapePerType,
   containerWidth,
   containerHeight,
   rows,
@@ -50,6 +53,7 @@ const Grid: React.FC<GridProps> = ({
   cellHeight,
   rowGap,
   colGap,
+  msToHelp,
   onShapeCompleted,
   openFooterBox,
   targetFooterBoxRect,
@@ -78,50 +82,80 @@ const Grid: React.FC<GridProps> = ({
   }, [rows, cols]);
 
   const [gridData, setGridData] = useState<CellData[][]>(initialGridData);
+  const [pulse, setPulse] = useState(false);
 
+  useEffect(() => {
+    if (openFooterBox !== null) {
+      const intervalId = setInterval(() => {
+        setPulse(true);
+        setTimeout(() => setPulse(false), 1500); // pulse lasts 1.5 seconds
+      }, msToHelp);
+      return () => clearInterval(intervalId);
+    } else {
+      setPulse(false);
+    }
+  }, [openFooterBox, msToHelp]);
+
+  // Generate shapePerType copies for each shape definition.
   const initialShapes = useMemo<Shape[]>(() => {
     const placedShapes: Shape[] = [];
     let shapeIdCounter = 1;
-    shapeDefinitions.forEach(def => {
-      let placed = false;
-      const maxRowOffset = Math.max(...def.offsets.map(o => o.row));
-      const maxColOffset = Math.max(...def.offsets.map(o => o.col));
-      const shapeHeight = maxRowOffset + 2;
-      const shapeWidth = maxColOffset + 2;
-      for (let attempt = 0; attempt < 100 && !placed; attempt++) {
-        const startRow = Math.floor(randomInRange(0, rows - shapeHeight + 1));
-        const startCol = Math.floor(randomInRange(0, cols - shapeWidth + 1));
-        const positions = def.offsets.map(o => ({
-          row: startRow + o.row,
-          col: startCol + o.col,
-        }));
-        const withinBounds = positions.every(
-          pos => pos.row >= 0 && pos.row < rows && pos.col >= 0 && pos.col < cols
-        );
-        const overlapping = positions.some(
-          pos => initialGridData[pos.row][pos.col].shapeId !== undefined
-        );
-        if (withinBounds && !overlapping) {
-          positions.forEach(pos => {
-            initialGridData[pos.row][pos.col].shapeId = shapeIdCounter;
-          });
-          placedShapes.push({
-            id: shapeIdCounter,
-            type: def.type,
-            positions,
-            selected: false,
-            completed: false,
-            visited: new Set<string>(),
-          });
-          shapeIdCounter++;
-          placed = true;
+    shapeDefinitions.forEach((def) => {
+      for (let i = 0; i < shapePerType; i++) {
+        let placed = false;
+        const maxRowOffset = Math.max(...def.offsets.map((o) => o.row));
+        const maxColOffset = Math.max(...def.offsets.map((o) => o.col));
+        const shapeHeight = maxRowOffset + 2;
+        const shapeWidth = maxColOffset + 2;
+        // Increase the number of attempts to 500 so more placements are possible
+        let attempt;
+        for (attempt = 0; attempt < 500 && !placed; attempt++) {
+          const startRow = Math.floor(randomInRange(0, rows - shapeHeight + 1));
+          const startCol = Math.floor(randomInRange(0, cols - shapeWidth + 1));
+          const positions = def.offsets.map((o) => ({
+            row: startRow + o.row,
+            col: startCol + o.col,
+          }));
+          const withinBounds = positions.every(
+            (pos) =>
+              pos.row >= 0 && pos.row < rows && pos.col >= 0 && pos.col < cols
+          );
+          const overlapping = positions.some(
+            (pos) => initialGridData[pos.row][pos.col].shapeId !== undefined
+          );
+          if (withinBounds && !overlapping) {
+            positions.forEach((pos) => {
+              initialGridData[pos.row][pos.col].shapeId = shapeIdCounter;
+            });
+            placedShapes.push({
+              id: shapeIdCounter,
+              type: def.type,
+              positions,
+              selected: false,
+              completed: false,
+              visited: new Set<string>(),
+            });
+            shapeIdCounter++;
+            placed = true;
+          }
+        }
+        if (!placed) {
+          console.warn(
+            `Could not place shape type '${def.type}' instance ${
+              i + 1
+            } after ${attempt} attempts.`
+          );
         }
       }
     });
     return placedShapes;
-  }, [initialGridData, rows, cols]);
+  }, [initialGridData, rows, cols, shapePerType]);
 
+  // **New useEffect** to update shapes state when initialShapes changes:
   const [shapes, setShapes] = useState<Shape[]>(initialShapes);
+  useEffect(() => {
+    setShapes(initialShapes);
+  }, [initialShapes]);
 
   // (2) Pan/Zoom state.
   const gridRef = useRef<HTMLDivElement>(null);
@@ -166,7 +200,7 @@ const Grid: React.FC<GridProps> = ({
       setOffsetX(x);
       setOffsetY(y);
     }
-  }, [scale]);
+  }, [scale, offsetX, offsetY]);
 
   useEffect(() => {
     gridRef.current?.focus();
@@ -205,8 +239,8 @@ const Grid: React.FC<GridProps> = ({
     const cell = gridData[row]?.[col];
     if (cell && cell.shapeId) {
       const targetShapeId = cell.shapeId;
-      setShapes(prev =>
-        prev.map(shape => {
+      setShapes((prev) =>
+        prev.map((shape) => {
           if (shape.id === targetShapeId) {
             const newVisited = new Set(shape.visited);
             newVisited.add(`${row}-${col}`);
@@ -216,34 +250,34 @@ const Grid: React.FC<GridProps> = ({
         })
       );
     } else {
-      setShapes(prev =>
-        prev.map(shape => ({ ...shape, selected: false, visited: new Set() }))
+      setShapes((prev) =>
+        prev.map((shape) => ({ ...shape, selected: false, visited: new Set() }))
       );
     }
   };
   const handleGridMouseLeave = () => {
     setHoveredCell(null);
-    setShapes(prev =>
-      prev.map(shape => ({ ...shape, selected: false, visited: new Set() }))
+    setShapes((prev) =>
+      prev.map((shape) => ({ ...shape, selected: false, visited: new Set() }))
     );
   };
 
   const getScaleClass = (r: number, c: number): string => {
     const cell = gridData[r][c];
     if (cell.shapeId) {
-      const shape = shapes.find(s => s.id === cell.shapeId);
-      if (shape && shape.selected) return 'cellScaleHover';
+      const shape = shapes.find((s) => s.id === cell.shapeId);
+      if (shape && shape.selected) return "cellScaleHover";
     }
     if (hoveredCell) {
       const [hr, hc] = hoveredCell;
-      if (r === hr && c === hc) return 'cellScaleHover';
+      if (r === hr && c === hc) return "cellScaleHover";
       const rowDiff = Math.abs(r - hr);
       const colDiff = Math.abs(c - hc);
       if ((rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1))
-        return 'cellScaleOrth';
-      if (rowDiff === 1 && colDiff === 1) return 'cellScaleDiag';
+        return "cellScaleOrth";
+      if (rowDiff === 1 && colDiff === 1) return "cellScaleDiag";
     }
-    return 'cellScaleNormal';
+    return "cellScaleNormal";
   };
 
   const shapeToBoxMap: Record<ShapeType, number> = {
@@ -258,13 +292,16 @@ const Grid: React.FC<GridProps> = ({
     const panSpeed = 50;
     let dX = 0,
       dY = 0;
-    if (e.key === 'ArrowLeft') dX = panSpeed;
-    else if (e.key === 'ArrowRight') dX = -panSpeed;
-    else if (e.key === 'ArrowUp') dY = panSpeed;
-    else if (e.key === 'ArrowDown') dY = -panSpeed;
-    else if (e.key === ' ') {
-      const focusedShape = shapes.find(shape => shape.selected);
-      if (focusedShape && focusedShape.visited.size === focusedShape.positions.length) {
+    if (e.key === "ArrowLeft") dX = panSpeed;
+    else if (e.key === "ArrowRight") dX = -panSpeed;
+    else if (e.key === "ArrowUp") dY = panSpeed;
+    else if (e.key === "ArrowDown") dY = -panSpeed;
+    else if (e.key === " ") {
+      const focusedShape = shapes.find((shape) => shape.selected);
+      if (
+        focusedShape &&
+        focusedShape.visited.size === focusedShape.positions.length
+      ) {
         const requiredBox = shapeToBoxMap[focusedShape.type];
         if (openFooterBox !== requiredBox) {
           console.log(
@@ -280,9 +317,13 @@ const Grid: React.FC<GridProps> = ({
           const startX = gridRect.left + offsetX + cellLeft * scale;
           const startY = gridRect.top + offsetY + cellTop * scale;
           const targetX =
-            targetFooterBoxRect.left + targetFooterBoxRect.width / 2 - cellWidth / 2;
+            targetFooterBoxRect.left +
+            targetFooterBoxRect.width / 2 -
+            cellWidth / 2;
           const targetY =
-            targetFooterBoxRect.top + targetFooterBoxRect.height / 2 - cellHeight / 2;
+            targetFooterBoxRect.top +
+            targetFooterBoxRect.height / 2 -
+            cellHeight / 2;
           return {
             id: `${focusedShape.id}-${idx}`,
             digit: gridData[pos.row][pos.col].digit!,
@@ -292,8 +333,8 @@ const Grid: React.FC<GridProps> = ({
             targetY,
           };
         });
-        setShapes(prev =>
-          prev.map(shape =>
+        setShapes((prev) =>
+          prev.map((shape) =>
             shape.id === focusedShape.id ? { ...shape, completed: true } : shape
           )
         );
@@ -314,9 +355,11 @@ const Grid: React.FC<GridProps> = ({
   // (4) Refresh only the cells of the completed shape.
   useEffect(() => {
     if (refreshCompletedShapeId !== null) {
-      const completedShape = shapes.find(shape => shape.id === refreshCompletedShapeId);
+      const completedShape = shapes.find(
+        (shape) => shape.id === refreshCompletedShapeId
+      );
       if (completedShape) {
-        setGridData(prevGridData => {
+        setGridData((prevGridData) => {
           const newGridData = [...prevGridData];
           completedShape.positions.forEach(({ row, col }) => {
             newGridData[row] = [...newGridData[row]];
@@ -330,8 +373,8 @@ const Grid: React.FC<GridProps> = ({
           });
           return newGridData;
         });
-        setShapes(prevShapes =>
-          prevShapes.filter(shape => shape.id !== refreshCompletedShapeId)
+        setShapes((prevShapes) =>
+          prevShapes.filter((shape) => shape.id !== refreshCompletedShapeId)
         );
       }
       onShapeRefreshed();
@@ -347,45 +390,55 @@ const Grid: React.FC<GridProps> = ({
       onKeyDown={handleKeyDown}
       tabIndex={0}
       style={{
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: 'crosshair',
+        position: "relative",
+        overflow: "hidden",
+        cursor: "none",
         width: `${containerWidth}px`,
         height: `${containerHeight}px`,
-        outline: 'none',
-      }}
-    >
+        outline: "none",
+      }}>
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
+          userSelect: "none",
           top: 0,
           left: 0,
-          transition: 'transform 0.2s ease-out',
+          transition: "transform 0.2s ease-out",
           transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale})`,
-          transformOrigin: '0 0',
-          display: 'grid',
+          transformOrigin: "0 0",
+          display: "grid",
           gridTemplateColumns: `repeat(${cols}, auto)`,
+          gridTemplateRows: `repeat(${rows}, ${cellHeight}px)`,
           rowGap: `${rowGap}px`,
           columnGap: `${colGap}px`,
-        }}
-      >
+        }}>
         {gridData.map((rowData, rIndex) =>
           rowData.map((cell, cIndex) => {
-            const shapeForCell = cell.shapeId && shapes.find(s => s.id === cell.shapeId);
+            const shapeForCell =
+              cell.shapeId && shapes.find((s) => s.id === cell.shapeId);
             const hideDigit = shapeForCell && shapeForCell.completed;
-            const scaleClass = getScaleClass(rIndex, cIndex);
+            const baseScaleClass = getScaleClass(rIndex, cIndex);
+            const pulsateClass =
+              shapeForCell &&
+              openFooterBox === shapeToBoxMap[shapeForCell.type] &&
+              pulse
+                ? "cellPulsateRed"
+                : "";
+            const finalScaleClass = `${baseScaleClass} ${pulsateClass}`.trim();
             return (
               <GridCell
                 key={`${rIndex}-${cIndex}`}
                 cellData={cell}
                 cellWidth={cellWidth}
                 cellHeight={cellHeight}
-                scaleClass={scaleClass}
+                scaleClass={finalScaleClass}
                 visible={!hideDigit}
                 onHover={() => {}}
                 isStatic={shapeForCell ? shapeForCell.selected : false}
                 isVisited={
-                  shapeForCell ? shapeForCell.visited.has(`${rIndex}-${cIndex}`) : false
+                  shapeForCell
+                    ? shapeForCell.visited.has(`${rIndex}-${cIndex}`)
+                    : false
                 }
               />
             );

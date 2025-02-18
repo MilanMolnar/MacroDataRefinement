@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const AnimationStyles: React.FC = () => (
   <style>{`
@@ -30,7 +30,25 @@ const AnimationStyles: React.FC = () => (
       from { offset-distance: 0%; }
       to { offset-distance: 100%; }
     }
-    
+    @keyframes pulsateRed {
+      0% {
+        transform: scale(1);
+        color: inherit;
+      }
+      50% {
+        transform: scale(1.1);
+        color: red;
+      }
+      100% {
+        transform: scale(1);
+        color: inherit;
+      }
+    }
+
+    .cellPulsateRed {
+      animation: pulsateRed 1s ease-in-out;
+    }
+        
     /* Once spawn is complete and if visible, the cell wobbles continuously */
     .cellAnimate {
       animation-name: slowWobble;
