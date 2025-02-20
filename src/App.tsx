@@ -91,6 +91,9 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   // New state for the information modal.
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
+  // New state for the custom alert message.
+  const [alertMessage, setAlertMessage] = useState("");
 
   // Update the folder list: if the user’s folder isn’t already there, add it.
   const folderData: Folder[] = useMemo(() => {
@@ -116,13 +119,25 @@ const App: React.FC = () => {
 
   // When a folder is clicked in HingedFolders:
   // If it matches the user’s input, we advance to the layout.
-  // Otherwise, we show an error.
+  // Otherwise, show a custom alert.
   const handleFolderSelect = (selectedFolder: string) => {
     if (selectedFolder === userFolderName) {
       setStep("layout");
     } else {
-      alert("Error: Incorrect folder selected!");
+      setAlertMessage("Access Denied: You are not authorized to access this folder.");
+      setTimeout(() => setAlertMessage(""), 2000);
     }
+  };
+
+  const changeCursor = () => {
+    return <CustomCursor />;
+  };
+
+  const handleShowCursor = () => {
+    showCursor
+      ? (document.body.style.cursor = "pointer")
+      : (document.body.style.cursor = "none");
+    setShowCursor(!showCursor);
   };
 
   // Compute the box dimensions.
@@ -132,198 +147,301 @@ const App: React.FC = () => {
   const boxHeight = Math.max(settings.containerHeight, minHeight);
 
   return (
-    // Fullscreen container centered horizontally and vertically.
-    <div
-      style={{
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "black",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}>
-      {/* The centered black box */}
+    <>
+      {/* Inline styles for custom alert animation */}
+      <style>
+        {`
+        @keyframes slideDownUp {
+          0% { top: -50px; opacity: 0; }
+          20% { top: 20px; opacity: 1; }
+          80% { top: 20px; opacity: 1; }
+          100% { top: -50px; opacity: 0; }
+        }
+        .custom-alert {
+          position: fixed;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: black;
+          color: white;
+          border: 2px solid white;
+          padding: 10px 20px;
+          font-family: monospace;
+          z-index: 40000;
+          animation: slideDownUp 2s ease-in-out forwards;
+        }
+      `}
+      </style>
+      {/* Fullscreen container centered horizontally and vertically */}
       <div
         style={{
+          width: "100vw",
+          height: "100vh",
           backgroundColor: "black",
-          width: `${boxWidth}px`,
-          height: `${boxHeight}px`,
-          position: "relative",
-          overflow: "hidden",
           display: "flex",
-          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
         }}>
-        {step === "boot" && (
-          <div style={{ width: "100%", height: "100%" }}>
-            <BootScreen onComplete={handleBootComplete} />
-          </div>
-        )}
-        {step === "folders" && (
-          <div style={{ textAlign: "center", width: "100%", height: "100%" }}>
-            <HingedFolders
-              folders={folderData}
-              onFolderSelect={handleFolderSelect}
-            />
-          </div>
-        )}
-        {step === "layout" && (
-          <div style={{ textAlign: "center", width: "100%", height: "100%" }}>
-            <SeveranceMDRLayout
-              headerText={userFolderName} // use user input as header
-              percentage="0"
-              key={layoutKey}
-              settings={settings}
-            />
-          </div>
-        )}
-        {/* Fixed control buttons displayed only in layout step */}
-        {step === "layout" && (
-          <>
-            <button
-              onClick={() => setShowSettings(true)}
-              style={{
-                position: "fixed",
-                top: 10,
-                right: 10,
-                zIndex: 25000,
-                backgroundColor: "black",
-                color: "white",
-                border: "2px solid white",
-                padding: "5px 10px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-              }}>
-              Settings
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                position: "fixed",
-                top: 50,
-                right: 10,
-                zIndex: 25000,
-                backgroundColor: "black",
-                color: "white",
-                border: "2px solid white",
-                padding: "5px 10px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-              }}>
-              Restart
-            </button>
-            <button
-              onClick={() => setShowInfoModal(true)}
-              style={{
-                position: "fixed",
-                top: 90,
-                right: 10,
-                zIndex: 25000,
-                backgroundColor: "black",
-                color: "white",
-                border: "2px solid white",
-                padding: "5px 10px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-              }}>
-              Information
-            </button>
-          </>
-        )}
-        {/* Settings Modal */}
-        {showSettings && (
-          <SettingsMenu
-            initialSettings={settings}
-            onSave={handleSaveSettings}
-            onClose={() => setShowSettings(false)}
-          />
-        )}
-        {/* Information Modal */}
-        {showInfoModal && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 30000,
-            }}
-            onClick={() => setShowInfoModal(false)}>
-            <div
-              style={{
-                backgroundColor: "black",
-                padding: "20px",
-                border: "2px solid white",
-                maxWidth: "80vw",
-                maxHeight: "80vh",
-                overflowY: "auto",
-              }}
-              onClick={(e) => e.stopPropagation()}>
-              <h2
-                style={{
-                  color: "white",
-                  fontFamily: "monospace",
-                  marginBottom: "10px",
-                }}>
-                Lumon Industries Severance Briefing
-              </h2>
-              <p
-                style={{
-                  color: "white",
-                  fontFamily: "monospace",
-                  marginBottom: "10px",
-                }}>
-                Welcome to Lumon Industries. In adherence with our strict
-                protocols, your severance has been approved. You are now
-                entering a controlled simulation where each folder represents a
-                critical operational directive.
-              </p>
-              <p
-                style={{
-                  color: "white",
-                  fontFamily: "monospace",
-                  marginBottom: "10px",
-                }}>
-                Your objective is to select the folder that exactly matches the
-                file name provided during your initial briefing. Failure to
-                comply will result in an operational error. Hints will be
-                automatically deployed after a brief period of inactivity.
-              </p>
-              <p
-                style={{
-                  color: "white",
-                  fontFamily: "monospace",
-                  marginBottom: "10px",
-                }}>
-                To execute an operation, simply click on the appropriate folder.
-                Every action is monitored and contributes to your overall
-                performance metrics. Efficiency, precision, and compliance are
-                paramount.
-              </p>
+        {/* The centered black box */}
+        <div
+          style={{
+            backgroundColor: "black",
+            width: `${boxWidth}px`,
+            height: `${boxHeight}px`,
+            position: "relative",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}>
+          {step === "boot" && (
+            <div style={{ width: "100%", height: "100%" }}>
+              <BootScreen onComplete={handleBootComplete} />
+            </div>
+          )}
+          {step === "folders" && (
+            <div style={{ textAlign: "center", width: "100%", height: "100%" }}>
+              <HingedFolders folders={folderData} onFolderSelect={handleFolderSelect} />
+            </div>
+          )}
+          {step === "layout" && (
+            <div style={{ textAlign: "center", width: "100%", height: "100%" }}>
+              <SeveranceMDRLayout
+                headerText={userFolderName} // use user input as header
+                percentage="0"
+                key={layoutKey}
+                settings={settings}
+              />
+            </div>
+          )}
+          {/* Fixed control buttons displayed only in layout step */}
+          {step === "layout" && (
+            <>
               <button
-                onClick={() => setShowInfoModal(false)}
+                onClick={() => setShowSettings(true)}
                 style={{
-                  marginTop: "20px",
-                  padding: "5px 10px",
+                  position: "fixed",
+                  top: 10,
+                  right: 10,
+                  zIndex: 25000,
                   backgroundColor: "black",
                   color: "white",
                   border: "2px solid white",
+                  padding: "5px 10px",
                   cursor: "pointer",
                   fontFamily: "monospace",
                 }}>
-                Close
+                Settings
               </button>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  position: "fixed",
+                  top: 50,
+                  right: 10,
+                  zIndex: 25000,
+                  backgroundColor: "black",
+                  color: "white",
+                  border: "2px solid white",
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                }}>
+                Restart
+              </button>
+              <button
+                onClick={() => setShowInfoModal(true)}
+                style={{
+                  position: "fixed",
+                  top: 90,
+                  right: 10,
+                  zIndex: 25000,
+                  backgroundColor: "black",
+                  color: "white",
+                  border: "2px solid white",
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                }}>
+                Information
+              </button>
+              <button
+                onClick={() => handleShowCursor()}
+                style={{
+                  position: "fixed",
+                  top: 130,
+                  right: 10,
+                  zIndex: 25000,
+                  backgroundColor: "black",
+                  color: "white",
+                  border: "2px solid white",
+                  padding: "5px 10px",
+                  cursor: "pointer",
+                  fontFamily: "monospace",
+                }}>
+                {showCursor ? "Cursor to: Normal" : "Cursor to: Custom"}
+              </button>
+            </>
+          )}
+          {/* Settings Modal */}
+          {showSettings && (
+            <SettingsMenu
+              initialSettings={settings}
+              onSave={handleSaveSettings}
+              onClose={() => setShowSettings(false)}
+            />
+          )}
+          {/* Extended Information Modal */}
+          {showInfoModal && (
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 30000,
+              }}
+              onClick={() => setShowInfoModal(false)}>
+              <div
+                style={{
+                  backgroundColor: "black",
+                  padding: "20px",
+                  border: "2px solid white",
+                  maxWidth: "80vw",
+                  maxHeight: "80vh",
+                  overflowY: "auto",
+                }}
+                onClick={(e) => e.stopPropagation()}>
+                <h2
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  Lumon Industries Severance Briefing
+                </h2>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  Welcome to Lumon Industries. Your severance has been approved,
+                  and you are now entering a controlled simulation where every
+                  folder represents a critical operational directive. This
+                  environment is designed to ensure absolute compliance and peak
+                  efficiency.
+                </p>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  <strong>Operational Directive:</strong> Your task is to select the
+                  folder that exactly matches the file name provided during your
+                  initial briefing. Each folder embodies a specific instruction.
+                  Only the folder that corresponds precisely with your assigned
+                  file name will result in a successful operation. Deviations from
+                  this mandate will trigger an immediate operational error.
+                </p>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  <strong>Procedure and Execution:</strong> The simulation is divided
+                  into multiple phases. First, the Boot Screen confirms your identity.
+                  Next, the folder selection phase requires you to navigate the hinged
+                  folders and select the correct operational directive. Finally, the
+                  layout phase engages your interaction with the production grid.
+                  Each phase is monitored and evaluated for precision and compliance.
+                </p>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  <strong>Assistance Protocols:</strong> Should you experience
+                  hesitation or inactivity, automated help pulses will be deployed
+                  at regulated intervals. These pulses are designed to enhance your
+                  situational awareness and guide you toward the correct directive.
+                </p>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  <strong>Settings and Calibration:</strong> At any point, access the
+                  Settings menu to recalibrate your operational parameters. Adjust the
+                  workspace dimensions, grid configuration, help intervals, and shape
+                  generation rates to optimize performance. These settings are vital
+                  for maintaining system integrity and maximizing throughput.
+                </p>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  <strong>How To Operate:</strong> Engage the operational boxes using
+                  the <strong>A: 1, S: 2, D: 3, F: 4, G: 5</strong> keys. Each key corresponds to a
+                  designated box that, when opened, exposes a segment of critical data.
+                  Once a box is open, press the <strong>spacebar</strong> to initiate data refinement.
+                  Press the <strong>spacebar</strong> once more to close the box once the data is refined.
+                  The refinement sequence is completed only when all boxes are properly refined
+                  and closed—any deviation may result in an operational error.
+                </p>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  <strong>Custom Interaction:</strong> For enhanced control, toggle the
+                  custom cursor mode. This optional feature aligns with Lumon’s high‑security
+                  protocols and provides improved operational precision.
+                </p>
+                <p
+                  style={{
+                    color: "white",
+                    fontFamily: "monospace",
+                    marginBottom: "10px",
+                  }}>
+                  Every command you execute is recorded and contributes to your overall
+                  performance metrics. Efficiency, precision, and absolute compliance are
+                  imperative. Failure to adhere to these directives will result in an immediate
+                  error and possible termination of your operation.
+                </p>
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  style={{
+                    marginTop: "20px",
+                    padding: "5px 10px",
+                    backgroundColor: "black",
+                    color: "white",
+                    border: "2px solid white",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                  }}>
+                  Close
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-        {/* Custom Cursor */}
-        <CustomCursor />
+          )}
+          {/* Custom Cursor */}
+          {showCursor && changeCursor()}
+        </div>
       </div>
-    </div>
+      {/* Custom Alert */}
+      {alertMessage && <div className="custom-alert">{alertMessage}</div>}
+    </>
   );
 };
 

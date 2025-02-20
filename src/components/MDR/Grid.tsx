@@ -392,7 +392,6 @@ const Grid: React.FC<GridProps> = ({
       style={{
         position: "relative",
         overflow: "hidden",
-        cursor: "none",
         width: `${containerWidth}px`,
         height: `${containerHeight}px`,
         outline: "none",
