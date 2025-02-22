@@ -64,11 +64,11 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
     <div style={overlayStyle}>
       <form onSubmit={handleSubmit} style={formStyle}>
         <h2 style={{ textAlign: "center", marginBottom: "15px" }}>Settings</h2>
-        {/* Extended Information Section in true Lemon style */}
+        {/* Extended Information Section in true ÉLumon style */}
         <p style={infoParagraphStyle}>
-          Welcome to the Lemon Industries Parameter Calibration Module. Here,
+          Welcome to the Lumon Industries Parameter Calibration Module. Here,
           you are entrusted with fine‑tuning your operational workspace to
-          maximize efficiency and ensure full compliance with Lemon protocols.
+          maximize efficiency and ensure full compliance with Lumon protocols.
         </p>
         <p style={infoParagraphStyle}>
           <strong>How to do the work:</strong> Adjust the container dimensions

@@ -9,7 +9,7 @@ interface BootScreenProps {
 
 const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
   const bootLines = [
-    "LEMON OS",
+    "LUMON OS",
     "parseElements: keyboard: 0 digitizer:  12 pointer 0 0 scroll: 0 led: 0",
     "startupTask",
     "Video has output streams: 1",
