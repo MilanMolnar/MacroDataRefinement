@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Header from "./Header";
 import Grid from "./Grid";
 import FooterBar from "./FooterBar";
@@ -7,6 +7,7 @@ import AnimationStyles from "./AnimationStyles";
 import { ShapeType } from "./shapeDefinitions";
 import FlyToBoxOverlay, { FlyDigit } from "./FlyToBoxOverlay";
 import { Settings } from "./../Settings";
+import winSoundSrc from "../../assets/sounds/win.mp3";
 
 interface SeveranceMDRLayoutProps {
   headerText: string;
@@ -78,22 +79,25 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     return completeCount * 20;
   }, [footerProgress]);
 
-  // --- Alert "gg" if header is 100% and all boxes are closed ---
-  const alertedGG = useRef(false);
+  // Show modal only once when header is 100% and all boxes are closed.
+  const [showGGModal, setShowGGModal] = useState(false);
+  const modalTriggeredRef = useRef(false);
   useEffect(() => {
     if (
       headerPercentage === 100 &&
       openFooterBox === null &&
-      !alertedGG.current
+      !modalTriggeredRef.current
     ) {
-      alertedGG.current = true;
-      const timer = setTimeout(() => {
-        alert("gg");
-      }, 1500);
-      return () => clearTimeout(timer);
+      modalTriggeredRef.current = true;
+      // Wait 2 seconds before showing the modal and playing the win sound.
+      setTimeout(() => {
+        const winAudio = new Audio(winSoundSrc);
+        winAudio.volume = 0.5;
+        winAudio.play().catch(() => {});
+        setShowGGModal(true);
+      }, 2000);
     }
   }, [headerPercentage, openFooterBox]);
-  // --------------------------------------------------------------------
 
   // Determine the bounding rect of the currently open footer box.
   const [targetFooterBoxRect, setTargetFooterBoxRect] =
@@ -125,6 +129,47 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
   return (
     <>
       <AnimationStyles />
+      {/* Win Modal */}
+      {showGGModal && (
+        <div
+          onClick={() => setShowGGModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "transparent",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 50000,
+            pointerEvents: "auto",
+            cursor: "pointer",
+          }}>
+          <div
+            style={{
+              border: "4px double white",
+              padding: "20px 40px",
+              fontSize: "5rem",
+              color: "white",
+              fontFamily: "monospace",
+              backgroundColor: "black",
+              width: "800px",
+              textAlign: "center",
+              transform: "scale(0)",
+              animation: "scaleUp 1.1s ease-out forwards",
+            }}>
+            100%
+          </div>
+          <style>{`
+            @keyframes scaleUp {
+              from { transform: scale(0); }
+              to { transform: scale(1); }
+            }
+          `}</style>
+        </div>
+      )}
       <div
         style={{
           width: `${containerWidth}px`,

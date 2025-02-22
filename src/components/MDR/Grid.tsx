@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import GridCell, { CellData } from "./GridCell";
 import { shapeDefinitions, ShapeType } from "./shapeDefinitions";
+import hoverSound from "../../assets/sounds/hover.mp3"; // Replace with your hover sound file's path
 
 export interface Shape {
   id: number;
@@ -239,26 +240,42 @@ const Grid: React.FC<GridProps> = ({
     const cell = gridData[row]?.[col];
     if (cell && cell.shapeId) {
       const targetShapeId = cell.shapeId;
-      setShapes((prev) =>
-        prev.map((shape) => {
+      // Update the shape's visited cells.
+      setShapes((prevShapes) =>
+        prevShapes.map((shape) => {
           if (shape.id === targetShapeId) {
+            const cellKey = `${row}-${col}`;
+            // Play hover sound only if this cell is being visited for the first time.
+            if (!shape.visited.has(cellKey)) {
+              const audio = new Audio(hoverSound);
+              audio.volume = 0.15;
+              audio.play().catch(() => {});
+            }
             const newVisited = new Set(shape.visited);
-            newVisited.add(`${row}-${col}`);
+            newVisited.add(cellKey);
             return { ...shape, selected: true, visited: newVisited };
           }
           return { ...shape, selected: false, visited: new Set() };
         })
       );
     } else {
-      setShapes((prev) =>
-        prev.map((shape) => ({ ...shape, selected: false, visited: new Set() }))
+      setShapes((prevShapes) =>
+        prevShapes.map((shape) => ({
+          ...shape,
+          selected: false,
+          visited: new Set(),
+        }))
       );
     }
   };
   const handleGridMouseLeave = () => {
     setHoveredCell(null);
-    setShapes((prev) =>
-      prev.map((shape) => ({ ...shape, selected: false, visited: new Set() }))
+    setShapes((prevShapes) =>
+      prevShapes.map((shape) => ({
+        ...shape,
+        selected: false,
+        visited: new Set(),
+      }))
     );
   };
 
@@ -386,6 +403,7 @@ const Grid: React.FC<GridProps> = ({
       ref={gridRef}
       onWheel={handleWheel}
       onMouseMove={handleGridMouseMove}
+      onMouseEnter={() => gridRef.current?.focus()} // Focus grid on hover
       onMouseLeave={handleGridMouseLeave}
       onKeyDown={handleKeyDown}
       tabIndex={0}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "./HingedFolders.css";
+import flipSoundSrc from "../assets/sounds/hinge_flip.mp3";
 
 export interface Folder {
   id: number;
@@ -82,6 +83,12 @@ interface HingedFoldersProps {
   onFolderSelect?: (folderName: string) => void;
 }
 
+const playFlipSound = () => {
+  const flipSound = new Audio(flipSoundSrc);
+  flipSound.volume = 0.1; // Adjust volume
+  flipSound.play().catch(() => {}); // Play sound, ignore errors
+};
+
 const HingedFolders: React.FC<HingedFoldersProps> = ({
   folders = folderData,
   onFolderSelect,
@@ -157,6 +164,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
       // If not already flipping, trigger the flip.
       if (!isFlipping) {
         const letter = currentFolder[0].toUpperCase();
+        playFlipSound(); // Play flip sound on scroll
         // If this folder is the first occurrence for its letter, update removedTabs.
         if (firstOccurrenceMap.get(letter) === currentIndex) {
           setRemovedTabs((prev) => new Set(prev).add(letter));
