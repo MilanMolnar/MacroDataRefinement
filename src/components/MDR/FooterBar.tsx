@@ -5,7 +5,7 @@ import { ShapeType } from "./shapeDefinitions";
 interface FooterBarProps {
   progress: Record<ShapeType, number>;
   openBox: number | null;
-  setOpenBox: (box: number | null) => void;
+  setOpenBox: React.Dispatch<React.SetStateAction<number | null>>;
   footerBoxRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
 }
 

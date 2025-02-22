@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import secondPartSoundSrc from "../../assets/sounds/binit.mp3";
 
 export interface FlyDigit {

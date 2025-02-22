@@ -130,10 +130,6 @@ const App: React.FC = () => {
     }
   };
 
-  const changeCursor = () => {
-    return <CustomCursor />;
-  };
-
   const handleShowCursor = () => {
     if (showCursor) {
       document.body.style.cursor = "pointer";

@@ -30,9 +30,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
   const [msToHelp, setMsToHelp] = useState(initialSettings.msToHelp);
   const [rows, setRows] = useState(initialSettings.rows);
   const [cols, setCols] = useState(initialSettings.cols);
-  const [headerHeight, setHeaderHeight] = useState(
-    initialSettings.headerHeight
-  );
+  const [headerHeight] = useState(initialSettings.headerHeight);
   const [shapePerType, setShapePerType] = useState(
     initialSettings.shapePerType
   );

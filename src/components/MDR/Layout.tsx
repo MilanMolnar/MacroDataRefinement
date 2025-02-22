@@ -7,7 +7,7 @@ import AnimationStyles from "./AnimationStyles";
 import { ShapeType } from "./shapeDefinitions";
 import FlyToBoxOverlay, { FlyDigit } from "./FlyToBoxOverlay";
 import { Settings } from "./../Settings";
-import winSoundSrc from "../../assets/sounds/win.mp3";
+import winSoundSrc from "../../assets/sounds/win-long.mp3";
 
 interface SeveranceMDRLayoutProps {
   headerText: string;
@@ -18,7 +18,6 @@ interface SeveranceMDRLayoutProps {
 
 const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
   headerText,
-  percentage,
   logoUrl,
   settings,
 }) => {
