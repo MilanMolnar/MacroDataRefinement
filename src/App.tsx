@@ -7,7 +7,6 @@ import CustomCursor from "./components/Cursor";
 import VolumeAdjuster from "./components/MDR/VolumeAdjuster";
 import bgMusicSrc from "./assets/sounds/music.mp3";
 import BuyMeACoffeeButton from "./components/bmc";
-import CrtFilterWrapper from "./components/CRTFilter";
 import CRTFilterWrapper from "./components/CRTFilter";
 
 // Example default settings (unchanged)

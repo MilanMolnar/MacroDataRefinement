@@ -1,5 +1,3 @@
-import React from "react";
-
 const CRTFilterWrapper = ({ children }: any) => {
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
