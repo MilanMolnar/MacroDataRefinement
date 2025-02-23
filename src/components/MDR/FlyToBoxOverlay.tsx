@@ -75,7 +75,7 @@ const FlyToBoxOverlay = ({
               left: fd.startX,
               top: fd.startY,
               fontSize: "24px",
-              color: "white",
+              color: "#acecfc",
               fontWeight: "bold",
               willChange: "transform",
               transform: "translate3d(0,0,-20px)",

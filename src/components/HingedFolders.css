@@ -22,6 +22,7 @@
   position: relative;
   perspective: 1000px;
   transform-style: preserve-3d;
+  top: 200px;
 }
 
 /*****************************************************
@@ -42,7 +43,7 @@
 .top-tab {
   position: absolute;
   top: -25px;
-  background: #fff;
+  background: #acecfc;
   color: #000;
   border: 1px solid transparent;
 }
@@ -66,7 +67,7 @@
 .top-letter-tab {
   position: absolute;
   top: -24px;
-  background: #fff;
+  background: #acecfc;
   color: #000;
   border: 1px solid transparent;
   /* Animate background-color and margin-top changes when they update */
@@ -82,7 +83,7 @@
 .bottom-tab {
   position: absolute;
 
-  border: 2px solid #fff;
+  border: 2px solid #acecfc;
   z-index: 0;
   text-align: center;
   padding: 2px 5px;
@@ -121,7 +122,7 @@
   position: absolute;
   width: 200px;
   height: 123px;
-  border: 2px solid rgb(255, 255, 255);
+  border: 2px solid #acecfc;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -132,7 +133,7 @@
 
 .front {
   background: #000;
-  color: rgb(255, 255, 255);
+  color: #acecfc;
 }
 
 .back {
@@ -157,7 +158,7 @@
   top: 0;
   transform: translateX(-50%);
   z-index: 100;
-  border: 2px solid rgb(255, 255, 255);
+  border: 2px solid #acecfc;
   border-radius: 10px;
   background: #000;
 
@@ -165,7 +166,7 @@
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: rgb(255, 255, 255);
+  color: #acecfc;
 }
 
 /*****************************************************
@@ -176,7 +177,7 @@
   width: 8px;
   height: 37px;
   border-radius: 10px;
-  background: rgb(255, 255, 255);
+  background: #acecfc;
   top: 112px;
   z-index: 999;
 }
@@ -230,13 +231,6 @@
   height: 100%;
 }
 
-.side-bars-left {
-  /* no extra positioning needed */
-}
-.side-bars-right {
-  /* likewise for the right side */
-}
-
 /*****************************************************
  * The individual bar lines (red bars).
  * We remove .bar-1 { top: ... } etc. 
@@ -249,7 +243,7 @@
   margin: auto; /* horizontally center in the 10px space */
   width: 22px; /* bar length */
   height: 2px;
-  background: rgb(255, 255, 255);
+  background: #acecfc;
   border-radius: 2px;
   /* 'top' is computed inline in JSX */
 }
@@ -274,7 +268,7 @@
   margin: auto;
   width: 22px;
   height: 2px;
-  background: rgb(255, 255, 255);
+  background: #acecfc;
   border-radius: 2px;
   transition: top 0.1s linear; /* Adjust timing as desired */
 }
@@ -292,7 +286,7 @@
   background: #000;
   z-index: -100;
   color: #000;
-  border: 1px solid White;
+  border: 1px solid #acecfc;
   border-top-color: 1px solid #000;
   /* Animate background-color and margin-bottom changes when updated */
   transition: background-color 0.3s ease, margin-bottom 0.5s ease;
@@ -303,7 +297,7 @@
 .folder-tab.bottom-letter-tab {
   position: absolute;
   bottom: -24px; /* adjust as needed */
-  background: #fff;
+  background: #acecfc;
   color: #000; /* sets text to black for visibility */
   border: 1px solid transparent;
   transition: background-color 0.3s ease, margin-bottom 0.5s ease;

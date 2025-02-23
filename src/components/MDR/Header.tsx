@@ -49,9 +49,9 @@ const Header: React.FC<HeaderProps> = ({ headerText, percentage, logoUrl }) => {
         alignItems: "center",
         padding: "0 10px",
         boxSizing: "border-box",
-        borderTop: "2px solid #fff",
-        borderBottom: "2px solid #fff",
-        borderLeft: "2px solid #fff",
+        borderTop: "2px solid #acecfc",
+        borderBottom: "2px solid #acecfc",
+        borderLeft: "2px solid #acecfc",
         borderRight: "none",
         backgroundColor: "#000",
         overflow: "visible",
@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ headerText, percentage, logoUrl }) => {
           <span
             style={{
               color: "black",
-              WebkitTextStroke: "1px white",
+              WebkitTextStroke: "1px #acecfc",
               marginRight: "190px",
             }}>
             {animatedPercentage}% Complete

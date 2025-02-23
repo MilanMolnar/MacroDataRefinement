@@ -47,7 +47,7 @@ function CustomCursor() {
           Z
         "
         fill="none"
-        stroke="#fff"
+        stroke="#acecfc"
         strokeWidth="8"
         strokeLinejoin="round"
       />

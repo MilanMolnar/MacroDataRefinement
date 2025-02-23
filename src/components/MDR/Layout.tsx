@@ -7,7 +7,7 @@ import AnimationStyles from "./AnimationStyles";
 import { ShapeType } from "./shapeDefinitions";
 import FlyToBoxOverlay, { FlyDigit } from "./FlyToBoxOverlay";
 import { Settings } from "./../Settings";
-import winSoundSrc from "../../assets/sounds/win-long.mp3";
+import winSoundSrc from "../../assets/sounds/win-final.mp3";
 
 interface SeveranceMDRLayoutProps {
   headerText: string;
@@ -39,7 +39,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
   const colGap = 8;
   const lineStyle: React.CSSProperties = {
     margin: 0,
-    border: "1px solid white",
+    border: "1px solid #acecfc",
   };
   const lineStyleBlack: React.CSSProperties = {
     margin: 0,
@@ -91,7 +91,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
       // Wait 2 seconds before showing the modal and playing the win sound.
       setTimeout(() => {
         const winAudio = new Audio(winSoundSrc);
-        winAudio.volume = 0.5;
+        winAudio.volume = 0.7;
         winAudio.play().catch(() => {});
         setShowGGModal(true);
       }, 2000);
@@ -148,10 +148,10 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           }}>
           <div
             style={{
-              border: "4px double white",
+              border: "4px double #acecfc",
               padding: "20px 40px",
               fontSize: "5rem",
-              color: "white",
+              color: "#acecfc",
               fontFamily: "monospace",
               backgroundColor: "black",
               width: "800px",
@@ -175,7 +175,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           height: `${containerHeight + 60}px`,
           marginBottom: "5px",
           backgroundColor: "black",
-          color: "white",
+          color: "#acecfc",
           margin: "0 auto",
           display: "flex",
           flexDirection: "column",

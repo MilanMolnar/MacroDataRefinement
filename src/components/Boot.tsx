@@ -126,7 +126,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
           width: "100%",
           paddingTop: "0px",
           backgroundColor: "black",
-          color: "white",
+          color: "#acecfc",
           fontFamily: "monospace",
           display: "flex",
           flexDirection: "column",
@@ -148,7 +148,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
       onClick={handleContainerClick}
       style={{
         backgroundColor: "black",
-        color: "white",
+        color: "#acecfc",
         fontFamily: "monospace",
         padding: "20px",
         width: "100vw",
@@ -175,7 +175,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
             }}
             style={{
               backgroundColor: "black",
-              color: "white",
+              color: "#acecfc",
               border: "none",
               outline: "none",
               fontFamily: "monospace",

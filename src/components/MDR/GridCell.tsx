@@ -68,10 +68,10 @@ const GridCell: React.FC<GridCellProps> = ({
 
   const visitedStyle = isVisited
     ? {
-        color: "white",
+        color: "#cff1fa",
         opacity: "100%",
         fontWeight: "bold",
-        textShadow: "#fff 0px 0 10px",
+        textShadow: "#cff1fa 0px 0 10px",
       }
     : {};
 
@@ -106,7 +106,7 @@ const GridCell: React.FC<GridCellProps> = ({
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        color: "#ddd",
+        color: "#acecfc",
       }}
       onMouseEnter={onHover}>
       <div className={`cellScale ${scaleClass}`}>

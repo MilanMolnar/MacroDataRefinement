@@ -85,7 +85,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
       top: -9,
       left: 1,
       width: "47%",
-      border: "2px solid white",
+      border: "2px solid #acecfc",
       height: "6px",
       backgroundColor: "black",
       transformOrigin: "left center",
@@ -99,7 +99,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
       position: "absolute",
       top: -9,
       right: 2,
-      border: "2px solid white",
+      border: "2px solid #acecfc",
       width: "47%",
       height: "6px",
       backgroundColor: "black",
@@ -116,7 +116,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
       bottom: "100%", // Align the bottom of the bar with the top of the box.
       width: "100%",
       height: "9px",
-      border: "2px solid white",
+      border: "2px solid #acecfc",
       backgroundColor: "black",
       transformOrigin: "bottom",
       transform: effectiveOpen ? "scaleY(1)" : "scaleY(0)",
@@ -142,7 +142,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
           style={{
             width: "100%",
             height: "40px", // Slightly taller top box
-            border: "2px solid white",
+            border: "2px solid #acecfc",
             display: "flex",
             zIndex: 10001,
             alignItems: "center",
@@ -166,7 +166,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
               position: "absolute",
               bottom: "100%",
               left: -2,
-              border: "2px solid white",
+              border: "2px solid #acecfc",
               padding: showExpanded ? "5px" : "0px 5px",
               width: "94%",
               height: showExpanded ? "176px" : "0px",
@@ -183,7 +183,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
               <div
                 style={{
                   height: "30px",
-                  border: "2px solid white",
+                  border: "2px solid #acecfc",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -286,14 +286,18 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
               </div>
               <div style={{ display: "flex", alignItems: "center" }}>
                 <div
-                  style={{ width: "30px", color: "white", fontWeight: "bold" }}>
+                  style={{
+                    width: "30px",
+                    color: "#acecfc",
+                    fontWeight: "bold",
+                  }}>
                   MA
                 </div>
                 <div
                   style={{
                     flex: 1,
                     height: "16px",
-                    border: "2px solid white",
+                    border: "2px solid #acecfc",
                     backgroundColor: "#000",
                     marginLeft: "5px",
                     position: "relative",
@@ -303,7 +307,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
                     style={{
                       height: "100%",
                       width: animateInner ? "100%" : "0%",
-                      backgroundColor: "white",
+                      backgroundColor: "#acecfc",
                       transition: "width 1s ease",
                     }}
                   />
@@ -321,7 +325,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
           style={{
             width: "100%",
             height: "33px",
-            border: "1px solid white",
+            border: "1px solid #acecfc",
             position: "relative",
             backgroundColor: "transparent",
             boxSizing: "border-box",
@@ -333,7 +337,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
               left: 0,
               height: "100%",
               width: percentage,
-              backgroundColor: "white",
+              backgroundColor: "#acecfc",
               transition: "width 0.5s ease",
               zIndex: 1,
             }}
@@ -350,7 +354,7 @@ const FooterBox = forwardRef<HTMLDivElement, FooterBoxProps>(
             }}>
             <div
               style={{
-                color: "white",
+                color: "#acecfc",
                 position: "absolute",
                 top: 0,
                 left: 0,
