@@ -199,15 +199,15 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
         {/* Render the top letter tabs */}
         {visibleLetterTabs.map(({ letter, index }) => {
           const distance = Math.abs(currentIndex - index);
-          // Calculate how much to subtract (10 per distance unit, capped at 55)
-          const subtraction = Math.min(distance * 10, 55);
-          const baseColor = { r: 207, g: 241, b: 250 };
+          // Convert #cff1fa to HSL (approximate values):
+          // For instance, #cff1fa is roughly hsl(195, 77%, 88%).
+          // For the active tab (distance 0) we keep lightness at 88%.
+          // For each unit of distance, we subtract 10% from the lightness.
+          const baseLightness = 88;
+          const decrement = 4; // percentage points per distance
+          const lightness = Math.max(baseLightness - distance * decrement, 20); // don't go too dark
 
-          const r = baseColor.r - subtraction;
-          const g = baseColor.g - subtraction;
-          const b = baseColor.b - subtraction;
-
-          const backgroundColor = `rgb(${r}, ${g}, ${b})`;
+          const backgroundColor = `hsl(195, 77%, ${lightness}%)`;
           const zIndex = 10 - distance;
 
           return (
