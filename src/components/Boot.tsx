@@ -136,8 +136,6 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
         <div>
           <RockerSwitch checked={switchedOn} onChange={handleSwitchChange} />
         </div>
-        <div style={{ marginTop: "1em", fontSize: "2rem" }}>Power</div>
-        <div style={{ marginTop: "0.5em" }}>Flip Switch to Power On</div>
       </div>
     );
   }

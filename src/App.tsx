@@ -281,22 +281,7 @@ const App: React.FC = () => {
                   }}>
                   Restart
                 </button>
-                <button
-                  onClick={() => setShowInfoModal(true)}
-                  style={{
-                    position: "fixed",
-                    top: 90,
-                    left: 10,
-                    zIndex: 25000,
-                    backgroundColor: "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}>
-                  Information
-                </button>
+
                 <button
                   onClick={() => handleShowCursor()}
                   style={{
@@ -522,7 +507,25 @@ const App: React.FC = () => {
             right: "10px",
           }}>
           {/* Buy Me a Coffee Button */}
-          <BuyMeACoffeeButton />
+          {poweredOn && <BuyMeACoffeeButton />}
+          {poweredOn && (
+            <button
+              onClick={() => setShowInfoModal(true)}
+              style={{
+                position: "fixed",
+                top: 90,
+                left: 10,
+                zIndex: 25000,
+                backgroundColor: "black",
+                color: "white",
+                border: "2px solid white",
+                padding: "5px 10px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+              }}>
+              Information
+            </button>
+          )}
         </div>
       </CRTFilterWrapper>
     </>
