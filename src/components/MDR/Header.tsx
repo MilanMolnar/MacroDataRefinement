@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import lumonWhite from "./lumon-white.png"; // adjust the path as needed
+import LumonLogo from "./LumonLogo";
 
 interface HeaderProps {
   headerText: string;
@@ -84,17 +85,7 @@ const Header: React.FC<HeaderProps> = ({ headerText, percentage, logoUrl }) => {
           top: "50%",
           transform: "translateY(-50%)",
         }}>
-        <img
-          src={logoUrl ? logoUrl : lumonWhite}
-          alt="Logo"
-          style={{
-            top: 4,
-            left: 15,
-            height: "150px",
-            width: "230px",
-            position: "relative",
-          }}
-        />
+        <LumonLogo></LumonLogo>
       </div>
     </header>
   );

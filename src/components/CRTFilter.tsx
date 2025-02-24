@@ -5,7 +5,11 @@ const CRTFilterWrapper = ({ children }: any) => {
       <svg width="0" height="0" style={{ position: "absolute" }}>
         <filter id="crt-bloom">
           {/* Apply a slight blur */}
-          <feGaussianBlur in="SourceGraphic" stdDeviation="0.7" result="blur" />
+          <feGaussianBlur
+            in="SourceGraphic"
+            stdDeviation="0.70"
+            result="blur"
+          />
           {/* Adjust brightness/contrast for a bloom look */}
           <feColorMatrix
             in="blur"
@@ -14,7 +18,7 @@ const CRTFilterWrapper = ({ children }: any) => {
               1 0 0 0 0
               0 1 0 0 0
               0 0 1 0 0
-              0 0 0 18 -7"
+              0 0 2 20 0"
             result="bloom"
           />
           {/* Blend the bloom with the original content */}

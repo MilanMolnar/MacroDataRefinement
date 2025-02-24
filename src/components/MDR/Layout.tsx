@@ -78,7 +78,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     return completeCount * 20;
   }, [footerProgress]);
 
-  // Show modal only once when header is 100% and all boxes are closed.
+  // Show win modal only once when header is 100% and all boxes are closed.
   const [showGGModal, setShowGGModal] = useState(false);
   const modalTriggeredRef = useRef(false);
   useEffect(() => {
@@ -97,6 +97,9 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
       }, 2000);
     }
   }, [headerPercentage, openFooterBox]);
+
+  // New state to track the thank-you modal.
+  const [showThankYouModal, setShowThankYouModal] = useState(false);
 
   // Determine the bounding rect of the currently open footer box.
   const [targetFooterBoxRect, setTargetFooterBoxRect] =
@@ -125,13 +128,20 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     setAnimatingShapeId(null);
   };
 
+  // Handler for dismissing the winning modal:
+  // When dismissed, show the thank-you modal.
+  const handleWinningModalDismiss = () => {
+    setShowGGModal(false);
+    setShowThankYouModal(true);
+  };
+
   return (
     <>
       <AnimationStyles />
       {/* Win Modal */}
       {showGGModal && (
         <div
-          onClick={() => setShowGGModal(false)}
+          onClick={handleWinningModalDismiss}
           style={{
             position: "fixed",
             top: 0,
@@ -169,6 +179,8 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           `}</style>
         </div>
       )}
+
+      {/* Main Container */}
       <div
         style={{
           width: `${containerWidth}px`,
@@ -238,6 +250,53 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           flyDigits={flyDigits}
           onAnimationEnd={handleAnimationEnd}
         />
+      )}
+
+      {/* Thank You Modal */}
+      {showThankYouModal && (
+        <div
+          onClick={() => setShowThankYouModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 60000,
+            pointerEvents: "auto",
+            cursor: "pointer",
+          }}>
+          <div
+            style={{
+              border: "4px double #acecfc",
+              padding: "20px 40px",
+              width: "800px",
+              fontSize: "1rem",
+              color: "#acecfc",
+              fontFamily: "monospace",
+              backgroundColor: "black",
+              textAlign: "center",
+              transform: "scale(0)",
+              animation: "scaleUp 1.1s ease-out forwards",
+            }}>
+            Thank you for playing!
+            <br />
+            Check out the settings to customize the gameplay experience, they
+            can easily break the game, but thats half the fun if you ask me. Any
+            support is appreciated, sharring it with your fellow innies, leaving
+            suggestions on how to improve the game or maybe a coffee ;)
+          </div>
+          <style>{`
+            @keyframes scaleUp {
+              from { transform: scale(0); }
+              to { transform: scale(1); }
+            }
+          `}</style>
+        </div>
       )}
     </>
   );
