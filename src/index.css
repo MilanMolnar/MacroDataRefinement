@@ -28,8 +28,6 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-
-  cursor: none; /* Hide the default OS cursor */
 }
 
 h1 {

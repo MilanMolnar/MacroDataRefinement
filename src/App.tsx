@@ -8,6 +8,7 @@ import VolumeAdjuster from "./components/MDR/VolumeAdjuster";
 import bgMusicSrc from "./assets/sounds/music.mp3";
 import BuyMeACoffeeButton from "./components/bmc";
 import CRTFilterWrapper from "./components/CRTFilter";
+import HelpGuideModal from "./components/tutorial";
 
 // Example default settings (unchanged)
 const defaultSettings: Settings = {
@@ -99,7 +100,10 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   // Information modal state.
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [showCursor, setShowCursor] = useState(true);
+
+  // Tutorial modal state.
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showCursor, setShowCursor] = useState(false);
   // Custom alert message.
   const [alertMessage, setAlertMessage] = useState("");
 
@@ -358,7 +362,7 @@ const App: React.FC = () => {
                     backgroundColor: "black",
                     padding: "20px",
                     border: "2px solid white",
-                    maxWidth: "80vw",
+                    maxWidth: "60vw",
                     maxHeight: "80vh",
                     overflowY: "auto",
                   }}
@@ -390,12 +394,13 @@ const App: React.FC = () => {
                       marginBottom: "10px",
                     }}>
                     <strong>Operational Directive:</strong> Your task is to
-                    select the folder that exactly matches the file name
-                    provided during your initial briefing. Each folder embodies
-                    a specific instruction. Only the folder that corresponds
-                    precisely with your assigned file name will result in a
-                    successful operation. Deviations from this mandate will
-                    trigger an immediate operational error.
+                    select the folder that exactly matches the file name you
+                    provided during the initial boot sequence. Each folder
+                    embodies a specific instruction. Only the folder that
+                    corresponds precisely with your assigned file name will
+                    result in a successfully authorized operation. Deviations
+                    from this mandate will trigger an immediate operational
+                    error.
                   </p>
                   <p
                     style={{
@@ -406,11 +411,12 @@ const App: React.FC = () => {
                     <strong>Procedure and Execution:</strong> The simulation is
                     divided into multiple phases. First, the Boot Screen
                     confirms your identity. Next, the folder selection phase
-                    requires you to navigate the hinged folders and select the
-                    correct operational directive. Finally, the layout phase
-                    engages your interaction with the production grid. Each
-                    phase is monitored and evaluated for precision and
-                    compliance.
+                    requires you to navigate the folders and select the correct
+                    operational directive. Finally, the refining phase engages
+                    your interaction with the production grid. You need to find
+                    each shape and corresponding storage box where the refined
+                    data will be placed. Each phase is monitored and evaluated
+                    for precision and compliance.
                   </p>
                   <p
                     style={{
@@ -444,15 +450,16 @@ const App: React.FC = () => {
                       marginBottom: "10px",
                     }}>
                     <strong>How To Operate:</strong> Engage the operational
-                    boxes using the{" "}
-                    <strong>A: 1, S: 2, D: 3, F: 4, G: 5</strong> keys. Each key
-                    corresponds to a designated box that, when opened, exposes a
-                    segment of critical data. Once a box is open, press the{" "}
-                    <strong>spacebar</strong> to initiate data refinement. Press
-                    the <strong>spacebar</strong> once more to close the box
-                    once the data is refined. The refinement sequence is
-                    completed only when all boxes are properly refined and
-                    closed—any deviation may result in an operational error.
+                    storage boxes using the provided keypad, use
+                    <strong>A - G</strong> keys. Each key corresponds to a
+                    designated box that, when opened, exposes a segment of
+                    critical data. Once a box is open, and the corresponding
+                    data is selected, press the <strong>spacebar</strong> to
+                    initiate data refinement. Press the{" "}
+                    <strong>spacebar</strong> once more to close the box once
+                    the data is refined. The refinement sequence is completed
+                    only when all boxes are properly refined and closed — any
+                    deviation may result in an operational error.
                   </p>
                   <p
                     style={{
@@ -493,6 +500,11 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {showTutorial && (
+              <HelpGuideModal
+                onClose={() => setShowTutorial(false)}></HelpGuideModal>
+            )}
             {showCursor && <CustomCursor />}
           </div>
         </div>
@@ -523,7 +535,25 @@ const App: React.FC = () => {
                 cursor: "pointer",
                 fontFamily: "monospace",
               }}>
-              Information
+              Briefing
+            </button>
+          )}
+          {poweredOn && (
+            <button
+              onClick={() => setShowTutorial(true)}
+              style={{
+                position: "fixed",
+                top: 10,
+                right: 10,
+                zIndex: 25000,
+                backgroundColor: "black",
+                color: "white",
+                border: "2px solid white",
+                padding: "5px 10px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+              }}>
+              I need help!
             </button>
           )}
         </div>
