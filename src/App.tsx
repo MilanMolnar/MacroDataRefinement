@@ -9,6 +9,7 @@ import bgMusicSrc from "./assets/sounds/music.mp3";
 import BuyMeACoffeeButton from "./components/bmc";
 import CRTFilterWrapper from "./components/CRTFilter";
 import HelpGuideModal from "./components/tutorial";
+import CustomAlert from "./components/MDR/CustomAlert";
 
 // Example default settings (unchanged)
 const defaultSettings: Settings = {
@@ -512,7 +513,7 @@ const App: React.FC = () => {
         </div>
         {/* Background Music Audio Element */}
         <audio ref={audioRef} src={bgMusicSrc} loop autoPlay preload="auto" />
-        {alertMessage && <div className="custom-alert">{alertMessage}</div>}
+        {alertMessage && <CustomAlert message={alertMessage}></CustomAlert>}
         {/* Buy Me a Coffee Button at Bottom Right */}
         <div
           style={{

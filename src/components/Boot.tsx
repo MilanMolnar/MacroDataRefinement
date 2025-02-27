@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import typingSoundSrc from "../assets/sounds/typing.mp3";
 import RockerSwitch from "./RockerSwitch"; // adjust the path as needed
+import CustomAlert from "./MDR/CustomAlert";
 
 interface BootScreenProps {
   onComplete: (input: string) => void;
@@ -28,6 +29,8 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
   const [currentLine, setCurrentLine] = useState("");
   const [showInput, setShowInput] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  // New state for the custom alert message.
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   // Ref to control skipping the boot sequence.
   const skipRef = useRef(false);
@@ -168,6 +171,18 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
+                const trimmed = inputValue.trim();
+                if (trimmed === "") {
+                  setAlertMessage(
+                    "Please write down the first word that comes to mind"
+                  );
+                  setTimeout(() => setAlertMessage(null), 2000);
+                  return;
+                } else if (trimmed.toLowerCase() === "kutya") {
+                  setAlertMessage(":)");
+                  setTimeout(() => setAlertMessage(null), 2000);
+                  return;
+                }
                 onComplete(inputValue);
               }
             }}
@@ -181,6 +196,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
           />
         )}
       </div>
+      {alertMessage && <CustomAlert message={alertMessage} />}
     </div>
   );
 };

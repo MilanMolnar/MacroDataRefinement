@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import "./HingedFolders.css";
 import flipSoundSrc from "../assets/sounds/hinge_flip.mp3";
+import CustomAlert from "./MDR/CustomAlert";
 
 export interface Folder {
   id: number;
@@ -86,6 +87,8 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
   const [barsOffset, setBarsOffset] = useState(0);
   // bottomTabs holds our bottom‑letter‑tabs that will persist for 3 flips.
   const [bottomTabs, setBottomTabs] = useState<BottomTab[]>([]);
+  // New state for alert message.
+  const [alertMessage, setAlertMessage] = useState<string>("");
 
   const nextIndex = (currentIndex + 1) % sortedFolders.length;
   const currentFolder = sortedFolders[currentIndex].name;
@@ -135,8 +138,15 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
   // Listen for wheel events to trigger a flip and update the side bars.
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Only allow scrolling down.
-      if (e.deltaY <= 0) return;
+      // If the user scrolls upward (deltaY <= 0), show custom alert.
+      if (e.deltaY <= 0) {
+        e.preventDefault();
+        if (!alertMessage) {
+          setAlertMessage("Please only scroll downwards");
+          setTimeout(() => setAlertMessage(""), 2000);
+        }
+        return;
+      }
       e.preventDefault();
 
       // If not already flipping, trigger the flip.
@@ -158,7 +168,13 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
 
     window.addEventListener("wheel", handleWheel, { passive: false });
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [isFlipping, currentIndex, currentFolder, firstOccurrenceMap]);
+  }, [
+    isFlipping,
+    currentIndex,
+    currentFolder,
+    firstOccurrenceMap,
+    alertMessage,
+  ]);
 
   // When the flip animation ends, update currentIndex and update the bottom tabs.
   const handleAnimationEnd = () => {
@@ -199,14 +215,9 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
         {/* Render the top letter tabs */}
         {visibleLetterTabs.map(({ letter, index }) => {
           const distance = Math.abs(currentIndex - index);
-          // Convert #cff1fa to HSL (approximate values):
-          // For instance, #cff1fa is roughly hsl(195, 77%, 88%).
-          // For the active tab (distance 0) we keep lightness at 88%.
-          // For each unit of distance, we subtract 10% from the lightness.
           const baseLightness = 88;
           const decrement = 4; // percentage points per distance
-          const lightness = Math.max(baseLightness - distance * decrement, 20); // don't go too dark
-
+          const lightness = Math.max(baseLightness - distance * decrement, 20);
           const backgroundColor = `hsl(195, 77%, ${lightness}%)`;
           const zIndex = 10 - distance;
 
@@ -227,9 +238,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
 
         {/* Render the bottom letter tabs (up to 3) */}
         {bottomTabs.map((tab) => {
-          // We use (3 - lifetime) as a “distance” measure.
           const distance = 4 - tab.lifetime;
-          // Compute a border brightness that fades from white to a grayer tone.
           const borderBrightness = Math.max(150, 255 - distance * 30);
           const borderColor = `rgb(${borderBrightness}, ${borderBrightness}, ${borderBrightness})`;
           const zIndex = 100 - distance;
@@ -266,7 +275,6 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           }}>
           <div className="card-face front">
             <span className="card-text">{currentFolder}</span>
-            {/* Built‑in top tab if this folder is the first occurrence */}
             {firstOccurrenceMap.get(currentFolder[0].toUpperCase()) ===
               currentIndex && (
               <div
@@ -372,6 +380,8 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           </div>
         </div>
       </div>
+      {/* Render the custom alert if alertMessage is set */}
+      {alertMessage && <CustomAlert message={alertMessage} />}
     </div>
   );
 };
