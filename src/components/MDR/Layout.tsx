@@ -98,6 +98,18 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     }
   }, [headerPercentage, openFooterBox]);
 
+  useEffect(() => {
+    const handleOpenFooterBox = (event: Event) => {
+      const customEvent = event as CustomEvent<{ box: number }>;
+      setOpenFooterBox(customEvent.detail.box);
+    };
+
+    window.addEventListener("openFooterBox", handleOpenFooterBox);
+    return () => {
+      window.removeEventListener("openFooterBox", handleOpenFooterBox);
+    };
+  }, []);
+
   // New state to track the thank-you modal.
   const [showThankYouModal, setShowThankYouModal] = useState(false);
 

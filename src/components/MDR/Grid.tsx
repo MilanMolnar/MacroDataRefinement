@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import GridCell, { CellData } from "./GridCell";
 import { shapeDefinitions, ShapeType } from "./shapeDefinitions";
 import hoverSound from "../../assets/sounds/hover.mp3"; // Replace with your hover sound file's path
+import CustomAlert from "./CustomAlert";
 
 export interface Shape {
   id: number;
@@ -84,6 +85,7 @@ const Grid: React.FC<GridProps> = ({
 
   const [gridData, setGridData] = useState<CellData[][]>(initialGridData);
   const [pulse, setPulse] = useState(false);
+  const [showNoShapeAlert, setShowNoShapeAlert] = useState(false);
 
   useEffect(() => {
     if (openFooterBox !== null) {
@@ -157,7 +159,7 @@ const Grid: React.FC<GridProps> = ({
   useEffect(() => {
     setShapes(initialShapes);
   }, [initialShapes]);
-
+  const [qKeyLock, setQKeyLock] = useState(false);
   // (2) Pan/Zoom state.
   const gridRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number>(1);
@@ -309,6 +311,52 @@ const Grid: React.FC<GridProps> = ({
     const panSpeed = 50;
     let dX = 0,
       dY = 0;
+
+    // In your handleKeyDown:
+    if (e.key.toLowerCase() === "q") {
+      // If the Q key is locked, ignore further presses.
+      if (qKeyLock) return;
+
+      // Lock the Q key for 2 seconds.
+      setQKeyLock(true);
+
+      if (!hoveredCell) {
+        setShowNoShapeAlert(true);
+        setTimeout(() => {
+          setShowNoShapeAlert(false);
+          setQKeyLock(false);
+        }, 2000);
+        return;
+      }
+      const [row, col] = hoveredCell;
+      const cell = gridData[row]?.[col];
+      if (!cell || !cell.shapeId) {
+        setShowNoShapeAlert(true);
+        setTimeout(() => {
+          setShowNoShapeAlert(false);
+          setQKeyLock(false);
+        }, 2000);
+        return;
+      }
+      const hoveredShape = shapes.find((s) => s.id === cell.shapeId);
+      if (!hoveredShape) {
+        setShowNoShapeAlert(true);
+        setTimeout(() => {
+          setShowNoShapeAlert(false);
+          setQKeyLock(false);
+        }, 2000);
+        return;
+      }
+      const boxToOpen = shapeToBoxMap[hoveredShape.type];
+      // Dispatch a custom event so the parent can react and open the correct FooterBox.
+      const event = new CustomEvent("openFooterBox", {
+        detail: { box: boxToOpen },
+      });
+      window.dispatchEvent(event);
+      // Release the lock after the animation.
+      setTimeout(() => setQKeyLock(false), 2000);
+      return;
+    }
     if (e.key === "ArrowLeft") dX = panSpeed;
     else if (e.key === "ArrowRight") dX = -panSpeed;
     else if (e.key === "ArrowUp") dY = panSpeed;
@@ -462,6 +510,9 @@ const Grid: React.FC<GridProps> = ({
           })
         )}
       </div>
+      {showNoShapeAlert && (
+        <CustomAlert message="Please hover the cursor over data that needs to be refined." />
+      )}
     </div>
   );
 };

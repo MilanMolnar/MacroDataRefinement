@@ -450,16 +450,18 @@ const App: React.FC = () => {
                       marginBottom: "10px",
                     }}>
                     <strong>How To Operate:</strong> Engage the operational
-                    storage boxes using the provided keypad, use
+                    storage boxes using the provided keypad, use{" "}
                     <strong>A - G</strong> keys. Each key corresponds to a
                     designated box that, when opened, exposes a segment of
-                    critical data. Once a box is open, and the corresponding
-                    data is selected, press the <strong>spacebar</strong> to
-                    initiate data refinement. Press the{" "}
-                    <strong>spacebar</strong> once more to close the box once
-                    the data is refined. The refinement sequence is completed
-                    only when all boxes are properly refined and closed — any
-                    deviation may result in an operational error.
+                    critical data. If you find data first, you can press the "Q"
+                    key to open the storage unit assigned to that data. Once a
+                    box is open, and the corresponding data is selected in
+                    whole, press the <strong>spacebar</strong> to initiate data
+                    refinement. Press the key assigned to the storage unit once
+                    more to close the box once the data is refined. The
+                    refinement sequence is completed only when all boxes are
+                    properly refined and closed — any deviation may result in an
+                    operational error.
                   </p>
                   <p
                     style={{

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import lumonWhite from "./lumon-white.png"; // adjust the path as needed
 import LumonLogo from "./LumonLogo";
 
 interface HeaderProps {
@@ -8,7 +7,7 @@ interface HeaderProps {
   logoUrl?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ headerText, percentage, logoUrl }) => {
+const Header: React.FC<HeaderProps> = ({ headerText, percentage }) => {
   const [animatedPercentage, setAnimatedPercentage] = useState(percentage);
 
   useEffect(() => {
