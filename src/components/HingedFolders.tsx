@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "./HingedFolders.css";
 import flipSoundSrc from "../assets/sounds/hinge_flip.mp3";
 import CustomAlert from "./MDR/CustomAlert";

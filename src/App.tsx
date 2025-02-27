@@ -10,6 +10,7 @@ import BuyMeACoffeeButton from "./components/bmc";
 import CRTFilterWrapper from "./components/CRTFilter";
 import HelpGuideModal from "./components/tutorial";
 import CustomAlert from "./components/MDR/CustomAlert";
+import { Analytics } from "@vercel/analytics/react";
 
 // Example default settings (unchanged)
 const defaultSettings: Settings = {
@@ -561,6 +562,7 @@ const App: React.FC = () => {
           )}
         </div>
       </CRTFilterWrapper>
+      <Analytics />
     </>
   );
 };
