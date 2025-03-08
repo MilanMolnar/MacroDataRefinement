@@ -14,12 +14,14 @@ interface SettingsMenuProps {
   initialSettings: Settings;
   onSave: (newSettings: Settings) => void;
   onClose: () => void;
+  userWon: boolean; // Determines if perks are unlocked
 }
 
 const SettingsMenu: React.FC<SettingsMenuProps> = ({
   initialSettings,
   onSave,
   onClose,
+  userWon,
 }) => {
   const [containerWidth, setContainerWidth] = useState(
     initialSettings.containerWidth
@@ -53,7 +55,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
       shapePerType,
     };
 
-    // Call parent's onSave with the new settings.
     onSave(newSettings);
     onClose();
   };
@@ -62,7 +63,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
     <div style={overlayStyle}>
       <form onSubmit={handleSubmit} style={formStyle}>
         <h2 style={{ textAlign: "center", marginBottom: "15px" }}>Settings</h2>
-        {/* Extended Information Section in true ÉLumon style */}
         <p style={infoParagraphStyle}>
           Welcome to the Lumon Industries Parameter Calibration Module. Here,
           you are entrusted with fine‑tuning your operational workspace to
@@ -140,7 +140,14 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
         </div>
 
         <div style={fieldStyle}>
-          <label>Shapes Per Type:</label>
+          <label
+            style={{
+              color: userWon ? "green" : "white",
+            }}>
+            {userWon
+              ? "Data Chunk per Storage Unit (Perk Unlocked)"
+              : "Data Chunk per Storage Unit (Perk Locked)"}
+          </label>
           <span style={infoStyle}>
             The number of shapes to generate for each type. This parameter
             directly affects task throughput. Enter any positive integer.
@@ -149,8 +156,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
             type="number"
             value={shapePerType}
             onChange={(e) => setShapePerType(Number(e.target.value))}
-            style={inputStyle}
+            style={{
+              ...inputStyle,
+              border: `1px solid ${userWon ? "green" : "white"}`,
+            }}
             min={1}
+            disabled={!userWon}
           />
         </div>
 

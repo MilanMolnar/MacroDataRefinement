@@ -22,7 +22,7 @@ const defaultSettings: Settings = {
   rows: 12,
   cols: 36,
   headerHeight: 40,
-  shapePerType: 1,
+  shapePerType: 1, // internal property remains unchanged
 };
 
 const severance_folders = [
@@ -78,7 +78,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const [poweredOn, setPoweredOn] = useState(false);
+  const [_, setPoweredOn] = useState(false);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(muted);
   useEffect(() => {
@@ -98,21 +98,15 @@ const App: React.FC = () => {
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showSounds, setShowSounds] = useState(false);
 
-  // New state: percentage (simulate progress) and persistent win state.
+  // Progress and win state.
   const [percentage, setPercentage] = useState<number>(0);
   const [userWon, setUserWon] = useState(false);
 
-  // New state for background music source.
+  // Background music state.
   const [bgMusic, setBgMusic] = useState<string>(bgMusicSrc);
 
-  // When percentage is 100 or more, update win state.
   useEffect(() => {
-    console.log("headerPercentage", percentage);
-    if (percentage >= 100) {
-      setUserWon(true);
-    } else {
-      setUserWon(false);
-    }
+    setUserWon(percentage >= 100);
   }, [percentage]);
 
   useEffect(() => {
@@ -163,17 +157,13 @@ const App: React.FC = () => {
     setShowCursor(!showCursor);
   };
 
-  // Instead of reloading the page, create a restart handler that resets game state but preserves the win state.
   const handleRestart = () => {
-    // Reset progress-related state.
     setStep("boot");
     setUserFolderName("");
     setLayoutKey(0);
     setPercentage(0);
-    // Note: we intentionally do not reset userWon so that the win perk persists.
   };
 
-  // Container sizing.
   const minWidth = 1800;
   const minHeight = 1000;
   const boxWidth = Math.max(settings.containerWidth, minWidth);
@@ -196,7 +186,18 @@ const App: React.FC = () => {
     setTimeout(() => setPoweredOn(true), 500);
   };
 
-  // New state: show the music selector modal.
+  const copyShareMessage = () => {
+    const shareMessage = `I have brought glory to the company, try out this Lumon MDR simulator and make Kier proud. Link: ${window.location.href}`;
+    navigator.clipboard
+      .writeText(shareMessage)
+      .then(() => {
+        setAlertMessage("Share message copied! Paste it for your friends.");
+      })
+      .catch(() => {
+        setAlertMessage("Failed to copy share message. Please try again.");
+      });
+  };
+
   const [showMusicModal, setShowMusicModal] = useState(false);
 
   return (
@@ -207,7 +208,7 @@ const App: React.FC = () => {
           width: "100vw",
           height: "100vh",
           backgroundImage:
-            "radial-gradient(circle at center,rgb(20, 27, 5) 0%, black 100%)",
+            "radial-gradient(circle at center, rgb(20, 27, 5) 0%, black 100%)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -246,9 +247,11 @@ const App: React.FC = () => {
                     width: "1050px",
                   }}>
                   <div style={{ textAlign: "center" }}>
+                    {/* Pass highlightFolder so that the parent folder is highlighted in green */}
                     <HingedFolders
                       folders={folderData}
                       onFolderSelect={handleFolderSelect}
+                      highlightFolder={userWon ? userFolderName : undefined}
                     />
                   </div>
                 </div>
@@ -285,8 +288,6 @@ const App: React.FC = () => {
                     settings={settings}
                     onWin={() => setUserWon(true)}
                   />
-
-                  {/* Restart button that resets progress but preserves win state */}
                   <button
                     onClick={handleRestart}
                     style={{
@@ -322,7 +323,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Menu Modal */}
       {showMenuModal && (
         <div
           style={{
@@ -353,7 +353,7 @@ const App: React.FC = () => {
                 <button
                   onClick={() => setShowSettings(true)}
                   style={{
-                    backgroundColor: "black",
+                    backgroundColor: userWon ? "green" : "black",
                     color: "white",
                     border: "2px solid white",
                     padding: "5px 10px",
@@ -398,7 +398,7 @@ const App: React.FC = () => {
                     }
                   }}
                   style={{
-                    backgroundColor: userWon ? "black" : "gray",
+                    backgroundColor: userWon ? "green" : "gray",
                     color: "white",
                     border: "2px solid white",
                     padding: "5px 10px",
@@ -410,16 +410,15 @@ const App: React.FC = () => {
                 <button
                   onClick={() => setShowSounds(true)}
                   style={{
-                    backgroundColor: "black",
+                    backgroundColor: userWon ? "green" : "black",
                     color: "white",
                     border: "2px solid white",
                     padding: "5px 10px",
                     cursor: "pointer",
                     fontFamily: "monospace",
                   }}>
-                  Sounds
+                  Sounds & Music
                 </button>
-
                 <button
                   onClick={handleRestart}
                   style={{
@@ -444,12 +443,38 @@ const App: React.FC = () => {
                   }}>
                   Close Menu
                 </button>
+                <button
+                  onClick={() => {
+                    copyShareMessage();
+                    const shareMessage = `Try out the most realistic Lumon MDR simulator, and make Kier proud. Link: ${window.location.href}`;
+                    const shareUrl = window.location.href;
+                    if (navigator.share) {
+                      navigator
+                        .share({
+                          title: "Lumon Message",
+                          text: shareMessage,
+                          url: shareUrl,
+                        })
+                        .catch((error) => console.log("Error sharing:", error));
+                    } else {
+                      alert("Share feature is not supported in this browser.");
+                    }
+                  }}
+                  style={{
+                    backgroundColor: "white",
+                    color: "black",
+                    border: "2px solid white",
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                  }}>
+                  Share with your innies!
+                </button>
                 <BuyMeACoffeeButton />
               </>
             ) : (
               <>
                 <VolumeAdjuster onVolumeChange={setBgVolume} />
-
                 <button
                   onClick={() => setMuted((prev) => !prev)}
                   style={{
@@ -467,25 +492,21 @@ const App: React.FC = () => {
                     if (userWon) {
                       setShowMusicModal(true);
                     } else {
-                      setAlertMessage("");
-                      setTimeout(
-                        () =>
-                          setAlertMessage(
-                            "You have not earned that special perk yet"
-                          ),
-                        100
+                      setAlertMessage(
+                        "You have not earned that special perk yet"
                       );
+                      setTimeout(() => setAlertMessage(""), 100);
                     }
                   }}
                   style={{
-                    backgroundColor: userWon ? "black" : "gray",
+                    backgroundColor: userWon ? "green" : "gray",
                     color: "white",
                     border: "2px solid white",
                     padding: "5px 10px",
                     cursor: userWon ? "pointer" : "not-allowed",
                     fontFamily: "monospace",
                   }}>
-                  Change BG Music
+                  Change Music Box
                 </button>
                 <button
                   onClick={() => setShowSounds(false)}
@@ -504,7 +525,6 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-
       {/* Music Selector Modal */}
       {showMusicModal && (
         <MusicSelectorModal
@@ -529,6 +549,7 @@ const App: React.FC = () => {
             initialSettings={settings}
             onSave={handleSaveSettings}
             onClose={() => setShowSettings(false)}
+            userWon={userWon}
           />
         </div>
       )}

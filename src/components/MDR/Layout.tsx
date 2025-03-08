@@ -8,6 +8,7 @@ import { ShapeType } from "./shapeDefinitions";
 import FlyToBoxOverlay, { FlyDigit } from "./FlyToBoxOverlay";
 import { Settings } from "./../Settings";
 import winSoundSrc from "../../assets/sounds/win-final.mp3";
+import CustomAlert from "./CustomAlert";
 
 interface SeveranceMDRLayoutProps {
   headerText: string;
@@ -59,7 +60,19 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     rectangle: 0,
     hline: 0,
   });
-
+  // Helper function to round up a percentage to two decimal places when more than one shape exists
+  const getRoundedPercentage = (
+    current: number,
+    increment: number,
+    totalShapes: number
+  ): number => {
+    let newPercentage = current + increment;
+    if (totalShapes > 1) {
+      // Multiply by 100, round up, then divide back to ensure two decimals
+      newPercentage = Math.ceil(newPercentage * 100) / 100;
+    }
+    return Math.min(newPercentage, 100);
+  };
   // Which footer box is open.
   const [openFooterBox, setOpenFooterBox] = useState<number | null>(null);
 
@@ -174,7 +187,18 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     setShowGGModal(false);
     setShowThankYouModal(true);
   };
-
+  const copyShareMessage = () => {
+    const shareMessage = `I have brought glory to the company, try out this Lumon MDR simulator and make Kier proud. Link: ${window.location.href}`;
+    navigator.clipboard
+      .writeText(shareMessage)
+      .then(() => {
+        setAlertMessage("Share message copied! Paste it for your friends.");
+      })
+      .catch(() => {
+        setAlertMessage("Failed to copy share message. Please try again.");
+      });
+  };
+  const [alertMessage, setAlertMessage] = useState("");
   return (
     <>
       <AnimationStyles />
@@ -272,9 +296,10 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
               onShapeCompleted={(shapeType: ShapeType) =>
                 setFooterProgress((prev) => ({
                   ...prev,
-                  [shapeType]: Math.min(
-                    prev[shapeType] + 100 / shapePerType,
-                    100
+                  [shapeType]: getRoundedPercentage(
+                    prev[shapeType],
+                    100 / shapePerType,
+                    shapePerType
                   ),
                 }))
               }
@@ -337,16 +362,34 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
               color: "#acecfc",
               fontFamily: "monospace",
               backgroundColor: "black",
-              textAlign: "center",
+              textAlign: "left",
+              lineHeight: "1.5",
               transform: "scale(0)",
               animation: "scaleUp 1.1s ease-out forwards",
             }}>
-            Thank you for playing!
-            <br />
-            Check out the settings to customize the gameplay experience, they
-            can easily break the game, but thats half the fun if you ask me. Any
-            support is appreciated, sharring it with your fellow innies, leaving
-            suggestions on how to improve the game or maybe a coffee ;)
+            Thank you for your exceptional work! Your dedication drives our
+            excellence and enhances our company’s prestige. You can adjust your
+            work environment in the settings panel — note that changes may
+            sometimes yield unexpected effects. Your insights, shared with
+            fellow innies, are vital for our progress. New perks are available
+            in the menu (press “Esc” and look for the green highlights).
+            <button
+              onClick={() => {
+                copyShareMessage();
+              }}
+              style={{
+                display: "block",
+                marginTop: "20px",
+                padding: "10px 20px",
+                fontSize: "1rem",
+                fontFamily: "monospace",
+                color: "#acecfc",
+                backgroundColor: "black",
+                border: "2px solid #acecfc",
+                cursor: "pointer",
+              }}>
+              Share
+            </button>
           </div>
           <style>{`
             @keyframes scaleUp {
@@ -356,6 +399,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           `}</style>
         </div>
       )}
+      {alertMessage && <CustomAlert message={alertMessage} />}
     </>
   );
 };

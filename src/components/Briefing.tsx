@@ -52,6 +52,16 @@ const Briefing = ({ setShowInfoModal }: Props) => {
             fontFamily: "monospace",
             marginBottom: "10px",
           }}>
+          <strong>Help and settings</strong> You can access the main menu by
+          pressing the 'Esc' key on you Lumon issued keypad. Here you can change
+          settings, get help and use your special perks.
+        </p>
+        <p
+          style={{
+            color: "white",
+            fontFamily: "monospace",
+            marginBottom: "10px",
+          }}>
           <strong>Operational Directive:</strong> Select the folder that exactly
           matches the file name provided at boot. Only an exact match will
           authorize your operation.

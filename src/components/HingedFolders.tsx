@@ -57,6 +57,7 @@ interface BottomTab {
 interface HingedFoldersProps {
   folders?: Folder[];
   onFolderSelect?: (folderName: string) => void;
+  highlightFolder?: string; // Added this line
 }
 
 const playFlipSound = () => {

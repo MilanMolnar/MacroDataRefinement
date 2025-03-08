@@ -34,6 +34,11 @@ const MusicSelectorModal: React.FC<MusicSelectorModalProps> = ({
       name: "Music Dance Experience",
       src: Music_dance_exp,
     },
+    {
+      id: "MDR_file_assignment",
+      name: "MDR File Assignment",
+      src: Mdr_file_assignment,
+    },
   ];
 
   const [selectedTrack, setSelectedTrack] = useState<string>(currentTrackSrc);
