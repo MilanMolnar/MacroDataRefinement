@@ -8,10 +8,14 @@ function CustomCursor() {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
+
+  // Calculate offsets based on viewBox and rendered size.
+  const renderedWidth = 35; // px
+  const renderedHeight = 35; // px
+  const tipX = (15 / 100) * renderedWidth; // 15 in viewBox corresponds to ~5.25px
+  const tipY = (5 / 100) * renderedHeight; // 5 in viewBox corresponds to ~1.75px
 
   return (
     <svg
@@ -20,25 +24,13 @@ function CustomCursor() {
       viewBox="0 0 100 100"
       style={{
         position: "fixed",
-        left: mousePos.x,
-        top: mousePos.y,
-        transform: "translate(-15%, -10%)", // Adjust so tip is under cursor
+        left: mousePos.x - 320,
+        top: mousePos.y - 260,
+        transform: `translate(-${tipX}px, -${tipY}px)`,
         pointerEvents: "none",
         zIndex: 9999,
       }}>
       <path
-        /*
-          Explanation of the shape:
-          
-          - M 15 5   : Move to the tip (top-left corner of the shape).
-          - L 90 40  : Draw the top edge to the right.
-          - L 80 60  : Move partway down/left for the bottom side, forming an inward corner (the "notch").
-          - L 40 90  : Continue to the bottom-left corner to finish that side.
-          - Z        : Close the path back to the tip.
-
-          Feel free to tweak these coordinates to adjust the angles, 
-          length, or how big the notch is (e.g., move "80 60" up/down).
-        */
         d="
           M 15 5
           L 90 40

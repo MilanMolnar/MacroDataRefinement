@@ -17,9 +17,9 @@ const AnimationStyles: React.FC = () => (
     /* Wobble animation: translation & rotation */
     @keyframes slowWobble {
       0%   { transform: translate(0px, 0px) rotate(0deg); }
-      25%  { transform: translate(1px, -1px) rotate(0.4deg); }
-      50%  { transform: translate(-1px, 1px) rotate(-0.4deg); }
-      75%  { transform: translate(1px, -1px) rotate(0.4deg); }
+      25%  { transform: translate(2px, -2px) rotate(0.4deg); }
+      50%  { transform: translate(-2px, 2px) rotate(-0.4deg); }
+      75%  { transform: translate(2px, -2px) rotate(0.4deg); }
       100% { transform: translate(0px, 0px) rotate(0deg); }
     }
     
@@ -64,9 +64,9 @@ const AnimationStyles: React.FC = () => (
       display: inline-block;
     }
     .cellScaleNormal { transform: scale(1); }
-    .cellScaleOrth   { transform: scale(1.5); }
-    .cellScaleDiag   { transform: scale(1.3); }
-    .cellScaleHover  { transform: scale(2); }
+    .cellScaleOrth   { transform: scale(1.7); }
+    .cellScaleDiag   { transform: scale(1.4); }
+    .cellScaleHover  { transform: scale(2.2); }
   `}</style>
 );
 

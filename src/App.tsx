@@ -11,19 +11,20 @@ import CRTFilterWrapper from "./components/CRTFilter";
 import HelpGuideModal from "./components/tutorial";
 import CustomAlert from "./components/MDR/CustomAlert";
 import { Analytics } from "@vercel/analytics/react";
+import Briefing from "./components/Briefing";
+import borderImageSrc from "./assets/border4.png";
+import MusicSelectorModal from "./components/MDR/MusicSelectorModal";
 
-// Example default settings (unchanged)
 const defaultSettings: Settings = {
-  containerWidth: 1124,
-  containerHeight: 768,
+  containerWidth: 1010,
+  containerHeight: 605,
   msToHelp: 10000,
-  rows: 16,
-  cols: 41,
+  rows: 12,
+  cols: 36,
   headerHeight: 40,
   shapePerType: 1,
 };
 
-// The folder data you already had.
 const severance_folders = [
   { id: 1, name: "Cold Harbor" },
   { id: 2, name: "Bellingham" },
@@ -59,19 +60,17 @@ const severance_folders = [
 type AppStep = "boot" | "folders" | "layout";
 
 const App: React.FC = () => {
-  // Set the document body background to black.
   useEffect(() => {
     document.body.style.backgroundColor = "black";
     return () => {
       document.body.style.backgroundColor = "";
     };
   }, []);
+
   useEffect(() => {
     const originalPlay = Audio.prototype.play;
     Audio.prototype.play = function () {
-      if (mutedRef.current) {
-        return Promise.resolve();
-      }
+      if (mutedRef.current) return Promise.resolve();
       return originalPlay.apply(this, arguments);
     };
     return () => {
@@ -80,36 +79,55 @@ const App: React.FC = () => {
   }, []);
 
   const [poweredOn, setPoweredOn] = useState(false);
-
-  // Mute state.
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(muted);
   useEffect(() => {
     mutedRef.current = muted;
-    if (audioRef.current) {
-      audioRef.current.muted = muted;
-    }
+    if (audioRef.current) audioRef.current.muted = muted;
   }, [muted]);
 
-  // Track which “screen” we’re showing.
-
   const [step, setStep] = useState<AppStep>("boot");
-  // Save the folder name (user input) from BootScreen.
   const [userFolderName, setUserFolderName] = useState<string>("");
-  // Settings state.
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [layoutKey, setLayoutKey] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  // Information modal state.
-  const [showInfoModal, setShowInfoModal] = useState(false);
-
-  // Tutorial modal state.
+  const [showInfoModal, setShowInfoModal] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showCursor, setShowCursor] = useState(false);
-  // Custom alert message.
   const [alertMessage, setAlertMessage] = useState("");
+  const [showMenuModal, setShowMenuModal] = useState(false);
+  const [showSounds, setShowSounds] = useState(false);
 
-  // Update the folder list.
+  // New state: percentage (simulate progress) and persistent win state.
+  const [percentage, setPercentage] = useState<number>(0);
+  const [userWon, setUserWon] = useState(false);
+
+  // New state for background music source.
+  const [bgMusic, setBgMusic] = useState<string>(bgMusicSrc);
+
+  // When percentage is 100 or more, update win state.
+  useEffect(() => {
+    console.log("headerPercentage", percentage);
+    if (percentage >= 100) {
+      setUserWon(true);
+    } else {
+      setUserWon(false);
+    }
+  }, [percentage]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowMenuModal(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const folderData: Folder[] = useMemo(() => {
     const folders = [...severance_folders];
     if (userFolderName && !folders.some((f) => f.name === userFolderName)) {
@@ -130,9 +148,8 @@ const App: React.FC = () => {
   };
 
   const handleFolderSelect = (selectedFolder: string) => {
-    if (selectedFolder === userFolderName) {
-      setStep("layout");
-    } else {
+    if (selectedFolder === userFolderName) setStep("layout");
+    else {
       setAlertMessage(
         "Access Denied: You are not authorized to access this folder."
       );
@@ -141,31 +158,33 @@ const App: React.FC = () => {
   };
 
   const handleShowCursor = () => {
-    if (showCursor) {
-      document.body.style.cursor = "pointer";
-    } else {
-      document.body.style.cursor = "none";
-    }
+    if (showCursor) document.body.style.cursor = "pointer";
+    else document.body.style.cursor = "none";
     setShowCursor(!showCursor);
   };
 
-  const minWidth = 1124;
-  const minHeight = 868;
+  // Instead of reloading the page, create a restart handler that resets game state but preserves the win state.
+  const handleRestart = () => {
+    // Reset progress-related state.
+    setStep("boot");
+    setUserFolderName("");
+    setLayoutKey(0);
+    setPercentage(0);
+    // Note: we intentionally do not reset userWon so that the win perk persists.
+  };
+
+  // Container sizing.
+  const minWidth = 1800;
+  const minHeight = 1000;
   const boxWidth = Math.max(settings.containerWidth, minWidth);
   const boxHeight = Math.max(settings.containerHeight, minHeight);
 
-  // Background music state
   const [bgVolume, setBgVolume] = useState<number>(0.5);
   const audioRef = useRef<HTMLAudioElement>(null);
-
   useEffect(() => {
-    if (audioRef.current) {
-      // Adjust volume multiplier as desired
-      audioRef.current.volume = bgVolume * 0.04;
-    }
+    if (audioRef.current) audioRef.current.volume = bgVolume * 0.04;
   }, [bgVolume]);
 
-  // When boot sequence starts, ensure we call play on the background music.
   const handlePower = () => {
     if (audioRef.current) {
       audioRef.current
@@ -177,91 +196,163 @@ const App: React.FC = () => {
     setTimeout(() => setPoweredOn(true), 500);
   };
 
+  // New state: show the music selector modal.
+  const [showMusicModal, setShowMusicModal] = useState(false);
+
   return (
     <>
-      <CRTFilterWrapper>
-        <style>{`
-        @keyframes slideDownUp {
-          0% { top: -50px; opacity: 0; }
-          20% { top: 20px; opacity: 1; }
-          80% { top: 20px; opacity: 1; }
-          100% { top: -50px; opacity: 0; }
-        }
-        .custom-alert {
-          position: fixed;
-          left: 50%;
-          transform: translateX(-50%);
-          background-color: black;
-          color: white;
-          border: 2px solid white;
-          padding: 10px 20px;
-          font-family: monospace;
-          z-index: 40000;
-          animation: slideDownUp 2s ease-in-out forwards;
-        }
-      `}</style>
+      {/* Main Container */}
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          backgroundImage:
+            "radial-gradient(circle at center,rgb(20, 27, 5) 0%, black 100%)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}>
         <div
           style={{
+            position: "relative",
+            width: `${boxWidth}px`,
+            height: `${boxHeight}px`,
+            overflow: "hidden",
+            backgroundColor: "rgb(0, 0, 0, 0)",
+          }}>
+          <CRTFilterWrapper>
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                marginTop: 120,
+                flexDirection: "column",
+                transform: "translateX(192px)",
+              }}>
+              {step === "boot" && (
+                <div style={{ width: "100%", height: "100%" }}>
+                  <BootScreen
+                    onComplete={handleBootComplete}
+                    onPower={handlePower}
+                  />
+                </div>
+              )}
+              {step === "folders" && (
+                <div
+                  style={{
+                    backgroundColor: "black",
+                    height: "800px",
+                    width: "1050px",
+                  }}>
+                  <div style={{ textAlign: "center" }}>
+                    <HingedFolders
+                      folders={folderData}
+                      onFolderSelect={handleFolderSelect}
+                    />
+                  </div>
+                </div>
+              )}
+              {step === "layout" && (
+                <div
+                  style={{
+                    textAlign: "center",
+                    width: "100%",
+                    height: "100%",
+                  }}>
+                  <a
+                    href="https://buymeacoffee.com/milanmolnar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "-360px",
+                      height: "120px",
+                      width: "100px",
+                      zIndex: 2995000,
+                      backgroundColor: "black",
+                      color: "white",
+                      border: "2px solid white",
+                      padding: "5px 10px",
+                      cursor: "pointer",
+                      fontFamily: "monospace",
+                    }}></a>
+                  <SeveranceMDRLayout
+                    headerText={userFolderName}
+                    percentage={percentage.toString()}
+                    key={layoutKey}
+                    settings={settings}
+                    onWin={() => setUserWon(true)}
+                  />
+
+                  {/* Restart button that resets progress but preserves win state */}
+                  <button
+                    onClick={handleRestart}
+                    style={{
+                      marginTop: 10,
+                      backgroundColor: "red",
+                      color: "white",
+                      border: "2px solid white",
+                      padding: "5px 10px",
+                      cursor: "pointer",
+                      fontFamily: "monospace",
+                    }}>
+                    Restart
+                  </button>
+                </div>
+              )}
+              {showCursor && <CustomCursor />}
+            </div>
+          </CRTFilterWrapper>
+          <img
+            src={borderImageSrc}
+            alt="App Border"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              pointerEvents: "none",
+              zIndex: 3000,
+              filter: "none",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Menu Modal */}
+      {showMenuModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
             width: "100vw",
             height: "100vh",
-            backgroundColor: "black",
+            backgroundColor: "rgba(0,0,0,0.8)",
+            zIndex: 6000,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            cursor: "pointer",
           }}>
           <div
             style={{
-              border: `${poweredOn ? "2px solid #acecfc" : "none"} `,
               backgroundColor: "black",
-              width: `${boxWidth}px`,
-              height: `${boxHeight}px`,
-              borderRadius: "25px",
-              position: "relative",
-              overflow: "hidden",
+              border: "2px solid white",
+              padding: "20px",
               display: "flex",
               flexDirection: "column",
+              gap: "10px",
             }}>
-            {step === "boot" && (
-              <div style={{ width: "100%", height: "100%" }}>
-                <BootScreen
-                  onComplete={handleBootComplete}
-                  onPower={handlePower}
-                />
-              </div>
-            )}
-            {step === "folders" && (
-              <div
-                style={{
-                  textAlign: "center",
-                  width: "100%",
-                  height: "100%",
-                }}>
-                <HingedFolders
-                  folders={folderData}
-                  onFolderSelect={handleFolderSelect}
-                />
-              </div>
-            )}
-            {step === "layout" && (
-              <div
-                style={{ textAlign: "center", width: "100%", height: "100%" }}>
-                <SeveranceMDRLayout
-                  headerText={userFolderName}
-                  percentage="0"
-                  key={layoutKey}
-                  settings={settings}
-                />
-              </div>
-            )}
-            {step === "layout" && (
+            {!showSounds ? (
               <>
+                <div style={{ textAlign: "center" }}>MENU</div>
                 <button
                   onClick={() => setShowSettings(true)}
                   style={{
-                    position: "fixed",
-                    top: 10,
-                    left: 10,
-                    zIndex: 25000,
                     backgroundColor: "black",
                     color: "white",
                     border: "2px solid white",
@@ -272,12 +363,66 @@ const App: React.FC = () => {
                   Settings
                 </button>
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={() => setShowInfoModal(true)}
                   style={{
-                    position: "fixed",
-                    top: 50,
-                    left: 10,
-                    zIndex: 25000,
+                    backgroundColor: "black",
+                    color: "white",
+                    border: "2px solid white",
+                    padding: "5px 10px",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                  }}>
+                  Briefing
+                </button>
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  style={{
+                    backgroundColor: "black",
+                    color: "white",
+                    border: "2px solid white",
+                    padding: "5px 10px",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                  }}>
+                  I need help!
+                </button>
+                <button
+                  onClick={() => {
+                    if (userWon) {
+                      handleShowCursor();
+                    } else {
+                      setAlertMessage(
+                        "You have not earned that special perk yet"
+                      );
+                      setTimeout(() => setAlertMessage(""), 2000);
+                    }
+                  }}
+                  style={{
+                    backgroundColor: userWon ? "black" : "gray",
+                    color: "white",
+                    border: "2px solid white",
+                    padding: "5px 10px",
+                    cursor: userWon ? "pointer" : "not-allowed",
+                    fontFamily: "monospace",
+                  }}>
+                  {showCursor ? "Normal Cursor" : "Lumon pointer"}
+                </button>
+                <button
+                  onClick={() => setShowSounds(true)}
+                  style={{
+                    backgroundColor: "black",
+                    color: "white",
+                    border: "2px solid white",
+                    padding: "5px 10px",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                  }}>
+                  Sounds
+                </button>
+
+                <button
+                  onClick={handleRestart}
+                  style={{
                     backgroundColor: "black",
                     color: "white",
                     border: "2px solid white",
@@ -287,14 +432,9 @@ const App: React.FC = () => {
                   }}>
                   Restart
                 </button>
-
                 <button
-                  onClick={() => handleShowCursor()}
+                  onClick={() => setShowMenuModal(false)}
                   style={{
-                    position: "fixed",
-                    top: 130,
-                    left: 10,
-                    zIndex: 25000,
                     backgroundColor: "black",
                     color: "white",
                     border: "2px solid white",
@@ -302,266 +442,127 @@ const App: React.FC = () => {
                     cursor: "pointer",
                     fontFamily: "monospace",
                   }}>
-                  {showCursor ? "Cursor to: Normal" : "Cursor to: Custom"}
+                  Close Menu
                 </button>
-                <div
-                  style={{
-                    position: "fixed",
-                    bottom: 10,
-                    left: 10,
-                    zIndex: 250,
-                  }}>
-                  <VolumeAdjuster onVolumeChange={setBgVolume} />
-                </div>
-                {/* Mute Toggle Button */}
+                <BuyMeACoffeeButton />
+              </>
+            ) : (
+              <>
+                <VolumeAdjuster onVolumeChange={setBgVolume} />
+
                 <button
                   onClick={() => setMuted((prev) => !prev)}
                   style={{
-                    position: "fixed",
-                    bottom: 125,
-                    left: 10,
-                    zIndex: 25000,
-                    width: "90px",
                     backgroundColor: "black",
                     color: "white",
-                    justifyContent: "left",
-                    textAlign: "left",
                     border: "2px solid white",
                     padding: "5px 10px",
                     cursor: "pointer",
                     fontFamily: "monospace",
-                    fontSize: "1rem",
                   }}>
                   {muted ? "Unmute" : "Mute"}
                 </button>
-              </>
-            )}
-            {showSettings && (
-              <SettingsMenu
-                initialSettings={settings}
-                onSave={handleSaveSettings}
-                onClose={() => setShowSettings(false)}
-              />
-            )}
-            {/* Extended Information Modal */}
-            {showInfoModal && (
-              <div
-                style={{
-                  position: "fixed",
-                  top: 0,
-                  left: 0,
-                  width: "100vw",
-                  height: "100vh",
-                  backgroundColor: "rgba(0, 0, 0, 0.8)",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  zIndex: 30000,
-                }}
-                onClick={() => setShowInfoModal(false)}>
-                <div
+                <button
+                  onClick={() => {
+                    if (userWon) {
+                      setShowMusicModal(true);
+                    } else {
+                      setAlertMessage("");
+                      setTimeout(
+                        () =>
+                          setAlertMessage(
+                            "You have not earned that special perk yet"
+                          ),
+                        100
+                      );
+                    }
+                  }}
+                  style={{
+                    backgroundColor: userWon ? "black" : "gray",
+                    color: "white",
+                    border: "2px solid white",
+                    padding: "5px 10px",
+                    cursor: userWon ? "pointer" : "not-allowed",
+                    fontFamily: "monospace",
+                  }}>
+                  Change BG Music
+                </button>
+                <button
+                  onClick={() => setShowSounds(false)}
                   style={{
                     backgroundColor: "black",
-                    padding: "20px",
+                    color: "white",
                     border: "2px solid white",
-                    maxWidth: "60vw",
-                    maxHeight: "80vh",
-                    overflowY: "auto",
-                  }}
-                  onClick={(e) => e.stopPropagation()}>
-                  <h2
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    Lumon Industries Severance Briefing
-                  </h2>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    Welcome to Lumon Industries. Your severance has been
-                    approved, and you are now entering a controlled simulation
-                    where every folder represents a critical operational
-                    directive. This environment is designed to ensure absolute
-                    compliance and peak efficiency.
-                  </p>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    <strong>Operational Directive:</strong> Your task is to
-                    select the folder that exactly matches the file name you
-                    provided during the initial boot sequence. Each folder
-                    embodies a specific instruction. Only the folder that
-                    corresponds precisely with your assigned file name will
-                    result in a successfully authorized operation. Deviations
-                    from this mandate will trigger an immediate operational
-                    error.
-                  </p>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    <strong>Procedure and Execution:</strong> The simulation is
-                    divided into multiple phases. First, the Boot Screen
-                    confirms your identity. Next, the folder selection phase
-                    requires you to navigate the folders and select the correct
-                    operational directive. Finally, the refining phase engages
-                    your interaction with the production grid. You need to find
-                    each shape and corresponding storage box where the refined
-                    data will be placed. Each phase is monitored and evaluated
-                    for precision and compliance.
-                  </p>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    <strong>Assistance Protocols:</strong> Should you experience
-                    hesitation or inactivity, automated help pulses will be
-                    deployed at regulated intervals. These pulses are designed
-                    to enhance your situational awareness and guide you toward
-                    the correct directive.
-                  </p>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    <strong>Settings and Calibration:</strong> At any point,
-                    access the Settings menu to recalibrate your operational
-                    parameters. Adjust the workspace dimensions, grid
-                    configuration, help intervals, and shape generation rates to
-                    optimize performance. These settings are vital for
-                    maintaining system integrity and maximizing throughput.
-                  </p>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    <strong>How To Operate:</strong> Engage the operational
-                    storage boxes using the provided keypad, use{" "}
-                    <strong>A - G</strong> keys. Each key corresponds to a
-                    designated box that, when opened, exposes a segment of
-                    critical data. If you find data first, you can press the "Q"
-                    key to open the storage unit assigned to that data. Once a
-                    box is open, and the corresponding data is selected in
-                    whole, press the <strong>spacebar</strong> to initiate data
-                    refinement. Press the key assigned to the storage unit once
-                    more to close the box once the data is refined. The
-                    refinement sequence is completed only when all boxes are
-                    properly refined and closed — any deviation may result in an
-                    operational error.
-                  </p>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    <strong>Custom Interaction:</strong> For enhanced control,
-                    toggle the custom cursor mode. This optional feature aligns
-                    with Lumon's high‑security protocols and provides improved
-                    operational precision.
-                  </p>
-                  <p
-                    style={{
-                      color: "white",
-                      fontFamily: "monospace",
-                      marginBottom: "10px",
-                    }}>
-                    Every command you execute is recorded and contributes to
-                    your overall performance metrics. Efficiency, precision, and
-                    absolute compliance are imperative. Failure to adhere to
-                    these directives will result in an immediate error and
-                    possible termination of your operation.
-                  </p>
-                  <button
-                    onClick={() => setShowInfoModal(false)}
-                    style={{
-                      marginTop: "20px",
-                      padding: "5px 10px",
-                      backgroundColor: "black",
-                      color: "white",
-                      border: "2px solid white",
-                      cursor: "pointer",
-                      fontFamily: "monospace",
-                    }}>
-                    Close
-                  </button>
-                </div>
-              </div>
+                    padding: "5px 10px",
+                    cursor: "pointer",
+                    fontFamily: "monospace",
+                  }}>
+                  Back
+                </button>
+              </>
             )}
-
-            {showTutorial && (
-              <HelpGuideModal
-                onClose={() => setShowTutorial(false)}></HelpGuideModal>
-            )}
-            {showCursor && <CustomCursor />}
           </div>
         </div>
-        {/* Background Music Audio Element */}
-        <audio ref={audioRef} src={bgMusicSrc} loop autoPlay preload="auto" />
-        {alertMessage && <CustomAlert message={alertMessage}></CustomAlert>}
-        {/* Buy Me a Coffee Button at Bottom Right */}
+      )}
+
+      {/* Music Selector Modal */}
+      {showMusicModal && (
+        <MusicSelectorModal
+          currentTrackSrc={bgMusic}
+          onMusicSelect={(newSrc: string) => setBgMusic(newSrc)}
+          onClose={() => setShowMusicModal(false)}
+        />
+      )}
+
+      {/* Foreground Modals */}
+      {showSettings && (
         <div
           style={{
             position: "fixed",
-            bottom: "10px",
-            right: "10px",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 7000,
           }}>
-          {/* Buy Me a Coffee Button */}
-          {poweredOn && <BuyMeACoffeeButton />}
-          {poweredOn && (
-            <button
-              onClick={() => setShowInfoModal(true)}
-              style={{
-                position: "fixed",
-                top: 90,
-                left: 10,
-                zIndex: 25000,
-                backgroundColor: "black",
-                color: "white",
-                border: "2px solid white",
-                padding: "5px 10px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-              }}>
-              Briefing
-            </button>
-          )}
-          {poweredOn && (
-            <button
-              onClick={() => setShowTutorial(true)}
-              style={{
-                position: "fixed",
-                top: 10,
-                right: 10,
-                zIndex: 25000,
-                backgroundColor: "black",
-                color: "white",
-                border: "2px solid white",
-                padding: "5px 10px",
-                cursor: "pointer",
-                fontFamily: "monospace",
-              }}>
-              I need help!
-            </button>
-          )}
+          <SettingsMenu
+            initialSettings={settings}
+            onSave={handleSaveSettings}
+            onClose={() => setShowSettings(false)}
+          />
         </div>
-      </CRTFilterWrapper>
+      )}
+
+      {showInfoModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 7000,
+          }}>
+          <Briefing setShowInfoModal={setShowInfoModal} />
+        </div>
+      )}
+
+      {showTutorial && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 7000,
+          }}>
+          <HelpGuideModal onClose={() => setShowTutorial(false)} />
+        </div>
+      )}
+
+      <audio ref={audioRef} src={bgMusic} loop autoPlay preload="auto" />
+      {alertMessage && <CustomAlert message={alertMessage} />}
       <Analytics />
     </>
   );

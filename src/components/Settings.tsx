@@ -68,15 +68,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
           you are entrusted with fine‑tuning your operational workspace to
           maximize efficiency and ensure full compliance with Lumon protocols.
         </p>
-        <p style={infoParagraphStyle}>
-          <strong>How to do the work:</strong> Adjust the container dimensions
-          to match your designated workstation layout, set the "ms To Help"
-          interval to control the frequency of performance prompts, and
-          calibrate the grid (rows, columns, and shape quantities) to optimize
-          your production metrics. Every change is monitored and
-          recorded—maintain precision and follow the guidelines to prevent any
-          deviations from optimal output.
-        </p>
 
         <div style={fieldStyle}>
           <label>Container Width:</label>

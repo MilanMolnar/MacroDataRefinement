@@ -74,7 +74,7 @@ const Grid: React.FC<GridProps> = ({
           duration: randomInRange(4, 8),
           delay: randomInRange(0, 3),
           spawnDuration: randomInRange(1, 4),
-          spawnDelay: randomInRange(0, 1),
+          spawnDelay: randomInRange(0.5, 3.5),
           shapeId: undefined,
         });
       }
@@ -458,6 +458,7 @@ const Grid: React.FC<GridProps> = ({
       style={{
         position: "relative",
         overflow: "hidden",
+        paddingBottom: "5aspx",
         width: `${containerWidth}px`,
         height: `${containerHeight}px`,
         outline: "none",

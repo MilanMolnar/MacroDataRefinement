@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import "./HingedFolders.css";
 import flipSoundSrc from "../assets/sounds/hinge_flip.mp3";
 import CustomAlert from "./MDR/CustomAlert";
@@ -40,7 +40,6 @@ const severance_folders = [
   { id: 29, name: "Waynesboro" },
 ];
 
-// Constants for the scrolling bars remain unchanged.
 const NUM_BARS = 8;
 const BASE_POSITIONS = Array.from(
   { length: NUM_BARS },
@@ -49,14 +48,12 @@ const BASE_POSITIONS = Array.from(
 const SPEED_MULTIPLIERS = Array.from({ length: NUM_BARS }, () => 1);
 const SCROLL_MULTIPLIER = 0.1;
 
-// Define an interface for bottom tabs.
 interface BottomTab {
   letter: string;
   index: number;
-  lifetime: number; // How many flips/scrolls remain before removal
+  lifetime: number;
 }
 
-// Define the props for our component.
 interface HingedFoldersProps {
   folders?: Folder[];
   onFolderSelect?: (folderName: string) => void;
@@ -64,37 +61,50 @@ interface HingedFoldersProps {
 
 const playFlipSound = () => {
   const flipSound = new Audio(flipSoundSrc);
-  flipSound.volume = 0.1; // Adjust volume
-  flipSound.play().catch(() => {}); // Play sound, ignore errors
+  flipSound.volume = 0.1;
+  flipSound.play().catch(() => {});
 };
 
 const HingedFolders: React.FC<HingedFoldersProps> = ({
   folders = severance_folders,
   onFolderSelect,
 }) => {
-  // Sort the folders alphabetically by name before any processing.
   const sortedFolders = useMemo(() => {
     return [...folders].sort((a, b) => a.name.localeCompare(b.name));
   }, [folders]);
 
-  // currentIndex is the index of the folder shown on the top card.
+  // State declarations
   const [currentIndex, setCurrentIndex] = useState(0);
-  // isFlipping tells whether the top card is currently animating.
   const [isFlipping, setIsFlipping] = useState(false);
-  // removedTabs is used for the top tabs.
   const [removedTabs, setRemovedTabs] = useState<Set<string>>(new Set());
-  // barsOffset is used for the side-bars parallax effect.
   const [barsOffset, setBarsOffset] = useState(0);
-  // bottomTabs holds our bottom‑letter‑tabs that will persist for 3 flips.
   const [bottomTabs, setBottomTabs] = useState<BottomTab[]>([]);
-  // New state for alert message.
   const [alertMessage, setAlertMessage] = useState<string>("");
+  const [terminalInput, setTerminalInput] = useState<string>("");
+  const [terminalHistory, setTerminalHistory] = useState<string[]>([
+    "SYSTEM: Macro data refinement files successfully loaded",
+  ]);
+  const [targetIndex, setTargetIndex] = useState<number | null>(null);
+  const [autoFlipCount, setAutoFlipCount] = useState(0);
+  const [autoFlipTotal, setAutoFlipTotal] = useState(0);
+  // authorizedFolder holds the folder name that the user is allowed to access.
+  const [authorizedFolder, setAuthorizedFolder] = useState<string>("");
+
+  const terminalHistoryRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll terminal history to bottom
+  useEffect(() => {
+    if (terminalHistoryRef.current) {
+      terminalHistoryRef.current.scrollTop =
+        terminalHistoryRef.current.scrollHeight;
+    }
+  }, [terminalHistory]);
 
   const nextIndex = (currentIndex + 1) % sortedFolders.length;
   const currentFolder = sortedFolders[currentIndex].name;
   const nextFolder = sortedFolders[nextIndex].name;
 
-  // Map each letter to its first occurrence index.
+  // Map for first occurrence of each starting letter.
   const firstOccurrenceMap = useMemo(() => {
     const map = new Map<string, number>();
     sortedFolders.forEach((folder, index) => {
@@ -106,7 +116,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     return map;
   }, [sortedFolders]);
 
-  // Each unique letter gets a random horizontal offset.
+  // Random horizontal offsets for tabs.
   const folderTabOffsets = useMemo(() => {
     const offsets = new Map<number, number>();
     firstOccurrenceMap.forEach((index) => {
@@ -115,14 +125,12 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     return offsets;
   }, [firstOccurrenceMap]);
 
-  // Compute the array of unique top-letter tabs.
   const letterTabs = useMemo(() => {
     return Array.from(firstOccurrenceMap.entries())
       .map(([letter, index]) => ({ letter, index }))
       .sort((a, b) => a.index - b.index);
   }, [firstOccurrenceMap]);
 
-  // Compute which top-letter tabs remain visible (up to 3).
   const visibleLetterTabs = useMemo(() => {
     const available = letterTabs.filter(
       ({ letter }) => !removedTabs.has(letter)
@@ -135,10 +143,10 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     return top3.sort((a, b) => a.index - b.index);
   }, [letterTabs, removedTabs, currentIndex]);
 
-  // Listen for wheel events to trigger a flip and update the side bars.
+  // Listen for wheel events (ignored during auto‑flip)
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // If the user scrolls upward (deltaY <= 0), show custom alert.
+      if (targetIndex !== null) return;
       if (e.deltaY <= 0) {
         e.preventDefault();
         if (!alertMessage) {
@@ -149,18 +157,14 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
       }
       e.preventDefault();
 
-      // If not already flipping, trigger the flip.
       if (!isFlipping) {
         const letter = currentFolder[0].toUpperCase();
-        playFlipSound(); // Play flip sound on scroll
-        // If this folder is the first occurrence for its letter, update removedTabs.
+        playFlipSound();
         if (firstOccurrenceMap.get(letter) === currentIndex) {
           setRemovedTabs((prev) => new Set(prev).add(letter));
         }
         setIsFlipping(true);
       }
-
-      // Clamp and reverse the scroll for the side-bars.
       const MAX_DELTA = 50;
       const clampedDelta = Math.min(e.deltaY, MAX_DELTA);
       setBarsOffset((prev) => prev + clampedDelta * SCROLL_MULTIPLIER);
@@ -174,17 +178,33 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     currentFolder,
     firstOccurrenceMap,
     alertMessage,
+    targetIndex,
   ]);
 
-  // When the flip animation ends, update currentIndex and update the bottom tabs.
+  // When auto-flip is active, continuously update side bars to simulate scrolling.
+  useEffect(() => {
+    if (targetIndex !== null) {
+      const intervalId = setInterval(() => {
+        setBarsOffset((prev) => prev + 5);
+      }, 30);
+      return () => clearInterval(intervalId);
+    }
+  }, [targetIndex]);
+
+  // Compute flip animation duration dynamically.
+  const flipDuration =
+    targetIndex !== null && autoFlipTotal > 0
+      ? autoFlipCount === 0 || autoFlipCount === autoFlipTotal - 1
+        ? 0.2
+        : 0.1
+      : 0.2;
+
+  // Triggered at the end of each flip animation.
   const handleAnimationEnd = () => {
-    // Update our bottomTabs: decrement each tab’s lifetime and remove any expired tabs.
     setBottomTabs((prevTabs) => {
       const updatedTabs = prevTabs
         .map((tab) => ({ ...tab, lifetime: tab.lifetime - 1 }))
         .filter((tab) => tab.lifetime > 0);
-
-      // If the folder that just flipped is a first occurrence, add a new bottom tab.
       const currentLetter = sortedFolders[currentIndex].name[0].toUpperCase();
       if (firstOccurrenceMap.get(currentLetter) === currentIndex) {
         updatedTabs.push({
@@ -193,8 +213,6 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           lifetime: 4,
         });
       }
-
-      // Ensure we show at most 3 bottom tabs.
       if (updatedTabs.length > 3) {
         updatedTabs.sort((a, b) => a.index - b.index);
         return updatedTabs.slice(-3);
@@ -205,22 +223,159 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     if (currentIndex === sortedFolders.length - 1) {
       setRemovedTabs(new Set());
     }
-    setCurrentIndex(nextIndex);
+
+    const newIndex = (currentIndex + 1) % sortedFolders.length;
+    setCurrentIndex(newIndex);
     setIsFlipping(false);
+
+    if (targetIndex !== null && newIndex !== targetIndex) {
+      let delay = 40;
+      if (autoFlipTotal > 2) {
+        const t = autoFlipCount / (autoFlipTotal - 1);
+        delay = 10 + 90 * Math.pow(2 * t - 1, 2);
+      }
+      const baseMin = 5,
+        baseMax = 100;
+      const tProgress =
+        autoFlipTotal > 1 ? autoFlipCount / (autoFlipTotal - 1) : 0;
+      const offsetIncrement =
+        baseMin + (baseMax - baseMin) * (1 - Math.pow(2 * tProgress - 1, 2));
+      setBarsOffset((prev) => prev + offsetIncrement);
+
+      setTimeout(() => {
+        const folderLetter = sortedFolders[newIndex].name[0].toUpperCase();
+        if (firstOccurrenceMap.get(folderLetter) === newIndex) {
+          setRemovedTabs((prev) => new Set(prev).add(folderLetter));
+        }
+        playFlipSound();
+        setIsFlipping(true);
+      }, delay);
+      setAutoFlipCount((prevCount) => prevCount + 1);
+    } else {
+      if (authorizedFolder) {
+        setTerminalHistory((prev) => [
+          ...prev,
+          `RESULT: File "${authorizedFolder}" loaded successfully.`,
+        ]);
+      }
+      setTargetIndex(null);
+      setAutoFlipCount(0);
+      setAutoFlipTotal(0);
+      // Do not clear authorizedFolder.
+    }
+  };
+
+  // Enhanced command parsing for terminal input.
+  const handleTerminalSubmit = () => {
+    const input = terminalInput.trim();
+    if (!input) return;
+
+    // Command: cd <folder>
+    if (input.toLowerCase().startsWith("cd ")) {
+      const folderName = input.substring(3).trim();
+      // If no authorized folder is set, try to set it from input.
+      let auth = authorizedFolder;
+      if (!auth) {
+        const foundIndex = sortedFolders.findIndex(
+          (folder) => folder.name.toLowerCase() === folderName.toLowerCase()
+        );
+        if (foundIndex !== -1) {
+          auth = sortedFolders[foundIndex].name;
+          setAuthorizedFolder(auth);
+        }
+      }
+      if (auth && folderName.toLowerCase() === auth.toLowerCase()) {
+        // Immediately open the folder without flipping.
+        setTerminalHistory((prev) => [
+          ...prev,
+          `QUERY: Changing directory to "${folderName}"...`,
+          `RESULT: Opening "${folderName}"...`,
+        ]);
+        if (onFolderSelect) onFolderSelect(folderName);
+      } else {
+        setTerminalHistory((prev) => [
+          ...prev,
+          `QUERY: ${input}`,
+          `RESULT: Unauthorized.`,
+        ]);
+      }
+      setTerminalInput("");
+      return;
+    }
+
+    // Command: open
+    if (input.toLowerCase() === "open") {
+      if (
+        authorizedFolder &&
+        currentFolder.toLowerCase() === authorizedFolder.toLowerCase()
+      ) {
+        setTerminalHistory((prev) => [
+          ...prev,
+          `QUERY: open`,
+          `RESULT: Opening "${currentFolder}"...`,
+        ]);
+        if (onFolderSelect) onFolderSelect(currentFolder);
+      } else {
+        setTerminalHistory((prev) => [
+          ...prev,
+          `QUERY: open`,
+          `RESULT: Unauthorized.`,
+        ]);
+      }
+      setTerminalInput("");
+      return;
+    }
+
+    // Standard folder search.
+    const foundIndex = sortedFolders.findIndex(
+      (folder) => folder.name.toLowerCase() === input.toLowerCase()
+    );
+    if (foundIndex === -1) {
+      setTerminalHistory((prev) => [
+        ...prev,
+        `QUERY: Searching for "${input}"...`,
+        `RESULT: File "${input}" was not found.`,
+      ]);
+      setTerminalInput("");
+      return;
+    }
+    if (foundIndex === currentIndex) {
+      setTerminalHistory((prev) => [
+        ...prev,
+        `QUERY: Searching for "${input}"...`,
+        `RESULT: File "${input}" is already open.`,
+      ]);
+      setTerminalInput("");
+      return;
+    }
+    // Standard folder search: calculate flips needed.
+    const steps =
+      (foundIndex - currentIndex + sortedFolders.length) % sortedFolders.length;
+    setAutoFlipTotal(steps);
+    setAutoFlipCount(0);
+    setTargetIndex(foundIndex);
+    setAuthorizedFolder(sortedFolders[foundIndex].name);
+    setTerminalHistory((prev) => [
+      ...prev,
+      `QUERY: Searching for "${input}"...`,
+    ]);
+    if (!isFlipping) {
+      playFlipSound();
+      setIsFlipping(true);
+    }
+    setTerminalInput("");
   };
 
   return (
     <div className="hinge-wrapper">
       <div className="scene">
-        {/* Render the top letter tabs */}
         {visibleLetterTabs.map(({ letter, index }) => {
           const distance = Math.abs(currentIndex - index);
           const baseLightness = 88;
-          const decrement = 4; // percentage points per distance
+          const decrement = 4;
           const lightness = Math.max(baseLightness - distance * decrement, 20);
           const backgroundColor = `hsl(195, 77%, ${lightness}%)`;
           const zIndex = 10 - distance;
-
           return (
             <div
               key={letter}
@@ -235,12 +390,16 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
             </div>
           );
         })}
-
-        {/* Render the bottom letter tabs (up to 3) */}
         {bottomTabs.map((tab) => {
+          const distanceForTab = Math.abs(currentIndex - tab.index);
+          const baseLightness = 88;
+          const decrement = 4;
+          const borderLightness = Math.max(
+            baseLightness - distanceForTab * decrement,
+            20
+          );
+          const borderColor = `hsl(195, 77%, ${borderLightness}%)`;
           const distance = 4 - tab.lifetime;
-          const borderBrightness = Math.max(150, 255 - distance * 30);
-          const borderColor = `rgb(${borderBrightness}, ${borderBrightness}, ${borderBrightness})`;
           const zIndex = 100 - distance;
           return (
             <div
@@ -250,21 +409,17 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
                 left: `calc(50% - 100px + ${folderTabOffsets.get(
                   tab.index
                 )}px)`,
-                backgroundColor: "#000", // Always black
-                border: `2px solid ${borderColor}`, // Fading border
+                backgroundColor: "#000",
+                border: `2px solid ${borderColor}`,
                 zIndex,
                 marginBottom: distance * 1.3,
               }}
             />
           );
         })}
-
-        {/* The background folder (with next folder name) */}
         <div className="background-folder">
           <span className="card-text">{nextFolder}</span>
         </div>
-
-        {/* The top flipping card (current folder) */}
         <div
           className={`card top-card ${isFlipping ? "flip-forward" : ""}`}
           onAnimationEnd={handleAnimationEnd}
@@ -272,7 +427,14 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
             if (!isFlipping && onFolderSelect) {
               onFolderSelect(currentFolder);
             }
-          }}>
+          }}
+          style={
+            isFlipping
+              ? ({
+                  "--flip-duration": `${flipDuration}s`,
+                } as React.CSSProperties)
+              : {}
+          }>
           <div className="card-face front">
             <span className="card-text">{currentFolder}</span>
             {firstOccurrenceMap.get(currentFolder[0].toUpperCase()) ===
@@ -286,20 +448,13 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           </div>
           <div className="card-face back" />
         </div>
-
-        {/* The bottom card */}
         <div className="card bottom-card">
           <div className="card-face front" />
           <div className="card-face back" />
         </div>
-
-        {/* Hinge bars */}
         <div className="hinge-bar hinge-left" />
         <div className="hinge-bar hinge-right" />
-
-        {/* Side bars container remains unchanged */}
         <div className="side-bars-container">
-          {/* Left Side Bars */}
           <div className="side-bars side-bars-left">
             {[0, 1].map((rep) =>
               Array.from({ length: NUM_BARS }).map((_, i) => {
@@ -338,8 +493,6 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
               );
             })}
           </div>
-
-          {/* Right Side Bars */}
           <div className="side-bars side-bars-right">
             {[0, 1].map((rep) =>
               Array.from({ length: NUM_BARS }).map((_, i) => {
@@ -380,7 +533,27 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           </div>
         </div>
       </div>
-      {/* Render the custom alert if alertMessage is set */}
+      <div className="terminal-container">
+        <div className="terminal-history" ref={terminalHistoryRef}>
+          {terminalHistory.map((line, index) => (
+            <div key={index} className="terminal-line">
+              {line}
+            </div>
+          ))}
+        </div>
+        <input
+          type="text"
+          className="terminal-input"
+          value={terminalInput}
+          onChange={(e) => setTerminalInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleTerminalSubmit();
+            }
+          }}
+          placeholder="> "
+        />
+      </div>
       {alertMessage && <CustomAlert message={alertMessage} />}
     </div>
   );

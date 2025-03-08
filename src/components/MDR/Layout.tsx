@@ -14,12 +14,15 @@ interface SeveranceMDRLayoutProps {
   percentage: string;
   logoUrl?: string;
   settings: Settings;
+  // New prop to notify parent when win condition is met.
+  onWin?: () => void;
 }
 
 const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
   headerText,
   logoUrl,
   settings,
+  onWin,
 }) => {
   // Destructure settings values
   const {
@@ -32,7 +35,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     shapePerType,
   } = settings;
 
-  const gridHeight = containerHeight - headerHeight - 170;
+  const gridHeight = containerHeight - headerHeight - 155;
   const cellWidth = 24;
   const cellHeight = 32;
   const rowGap = 8;
@@ -70,6 +73,29 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
     footerBoxRefs.current = Array(5).fill(null);
   }
 
+  // Create a ref for the main container.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  // Compute the container's offset relative to the viewport.
+  useEffect(() => {
+    const updateOffset = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setOffset({ x: rect.left, y: rect.top });
+      }
+    };
+
+    // Calculate the offset initially.
+    updateOffset();
+
+    // Recalculate the offset on window resize.
+    window.addEventListener("resize", updateOffset);
+    return () => {
+      window.removeEventListener("resize", updateOffset);
+    };
+  }, []);
+
   // Compute header percentage.
   const headerPercentage = useMemo(() => {
     const completeCount = Object.values(footerProgress).filter(
@@ -88,6 +114,8 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
       !modalTriggeredRef.current
     ) {
       modalTriggeredRef.current = true;
+      // Notify the parent component that the win condition is reached.
+      if (onWin) onWin();
       // Wait 2 seconds before showing the modal and playing the win sound.
       setTimeout(() => {
         const winAudio = new Audio(winSoundSrc);
@@ -96,7 +124,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
         setShowGGModal(true);
       }, 2000);
     }
-  }, [headerPercentage, openFooterBox]);
+  }, [headerPercentage, openFooterBox, onWin]);
 
   useEffect(() => {
     const handleOpenFooterBox = (event: Event) => {
@@ -156,7 +184,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           onClick={handleWinningModalDismiss}
           style={{
             position: "fixed",
-            top: 0,
+            top: -100,
             left: 0,
             right: 0,
             bottom: 0,
@@ -164,14 +192,14 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 50000,
+            zIndex: 5001,
             pointerEvents: "auto",
             cursor: "pointer",
           }}>
           <div
             style={{
               border: "4px double #acecfc",
-              padding: "20px 40px",
+              padding: "20px 20px",
               fontSize: "5rem",
               color: "#acecfc",
               fontFamily: "monospace",
@@ -195,72 +223,90 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
       {/* Main Container */}
       <div
         style={{
-          width: `${containerWidth}px`,
-          height: `${containerHeight + 60}px`,
+          width: `${containerWidth + 50}px`,
+          height: `${containerHeight + 200}px`,
+
           marginBottom: "5px",
+
           backgroundColor: "black",
-          color: "#acecfc",
-          margin: "0 auto",
-          display: "flex",
-          flexDirection: "column",
-          outline: "none",
-          animation: "fadeIn 1s ease-out forwards",
+
+          position: "relative", // <-- This is key!
         }}>
-        <Header
-          headerText={headerText}
-          percentage={headerPercentage}
-          logoUrl={logoUrl}
-        />
-        <hr style={lineStyle} />
-        <hr style={lineStyleBlack} />
-        <hr style={lineStyle} />
-        <div style={{ padding: "0px" }}>
-          <Grid
-            msToHelp={msToHelp}
-            shapePerType={shapePerType}
-            containerWidth={containerWidth}
-            containerHeight={gridHeight}
-            rows={rows}
-            cols={cols}
-            cellWidth={cellWidth}
-            cellHeight={cellHeight}
-            rowGap={rowGap}
-            colGap={colGap}
-            onShapeCompleted={(shapeType: ShapeType) =>
-              setFooterProgress((prev) => ({
-                ...prev,
-                [shapeType]: Math.min(
-                  prev[shapeType] + 100 / shapePerType,
-                  100
-                ),
-              }))
-            }
-            openFooterBox={openFooterBox}
-            targetFooterBoxRect={targetFooterBoxRect}
-            onAnimationStart={handleAnimationStart}
-            refreshCompletedShapeId={completedShapeId}
-            onShapeRefreshed={() => setCompletedShapeId(null)}
+        <div
+          ref={containerRef}
+          style={{
+            width: `${containerWidth}px`,
+            height: `${containerHeight + 70}px`,
+
+            marginBottom: "5px",
+            padding: "40px",
+            backgroundColor: "black",
+            color: "#acecfc",
+            margin: "0 auto",
+            display: "flex",
+            flexDirection: "column",
+            outline: "none",
+            animation: "fadeIn 4s ease-out forwards",
+            position: "relative", // <-- This is key!
+          }}>
+          <Header
+            headerText={headerText}
+            percentage={headerPercentage}
+            logoUrl={logoUrl}
           />
+          <hr style={lineStyle} />
+          <hr style={lineStyleBlack} />
+          <hr style={lineStyle} />
+          <div style={{ padding: "0px" }}>
+            <Grid
+              msToHelp={msToHelp}
+              shapePerType={shapePerType}
+              containerWidth={containerWidth}
+              containerHeight={gridHeight}
+              rows={rows}
+              cols={cols}
+              cellWidth={cellWidth}
+              cellHeight={cellHeight}
+              rowGap={rowGap}
+              colGap={colGap}
+              onShapeCompleted={(shapeType: ShapeType) =>
+                setFooterProgress((prev) => ({
+                  ...prev,
+                  [shapeType]: Math.min(
+                    prev[shapeType] + 100 / shapePerType,
+                    100
+                  ),
+                }))
+              }
+              openFooterBox={openFooterBox}
+              targetFooterBoxRect={targetFooterBoxRect}
+              onAnimationStart={handleAnimationStart}
+              refreshCompletedShapeId={completedShapeId}
+              onShapeRefreshed={() => setCompletedShapeId(null)}
+            />
+          </div>
+          <hr style={lineStyle} />
+          <hr style={lineStyleBlack} />
+          <hr style={lineStyle} />
+          <div style={{ position: "relative", zIndex: 5002 }}>
+            <FooterBar
+              progress={footerProgress}
+              openBox={openFooterBox}
+              setOpenBox={setOpenFooterBox}
+              footerBoxRefs={footerBoxRefs}
+            />
+          </div>
+          <hr style={lineStyle} />
+          <FooterText />
         </div>
-        <hr style={lineStyle} />
-        <hr style={lineStyleBlack} />
-        <hr style={lineStyle} />
-        <div style={{ position: "relative", zIndex: 11000 }}>
-          <FooterBar
-            progress={footerProgress}
-            openBox={openFooterBox}
-            setOpenBox={setOpenFooterBox}
-            footerBoxRefs={footerBoxRefs}
-          />
-        </div>
-        <hr style={lineStyle} />
-        <FooterText />
       </div>
 
       {flyDigits.length > 0 && (
         <FlyToBoxOverlay
           flyDigits={flyDigits}
           onAnimationEnd={handleAnimationEnd}
+          offsetX={offset.x}
+          offsetY={offset.y}
         />
       )}
 
@@ -270,7 +316,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           onClick={() => setShowThankYouModal(false)}
           style={{
             position: "fixed",
-            top: 0,
+            top: -100,
             left: 0,
             right: 0,
             bottom: 0,
@@ -278,7 +324,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 60000,
+            zIndex: 6000,
             pointerEvents: "auto",
             cursor: "pointer",
           }}>

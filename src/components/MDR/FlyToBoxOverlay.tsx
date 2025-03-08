@@ -13,17 +13,25 @@ export interface FlyDigit {
 interface FlyToBoxOverlayProps {
   flyDigits: FlyDigit[];
   onAnimationEnd: () => void;
+  // Offsets of the container relative to the viewport.
+  offsetX?: number;
+  offsetY?: number;
 }
+
+const random = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
 
 const FlyToBoxOverlay = ({
   flyDigits,
   onAnimationEnd,
+  offsetX = 0,
+  offsetY = 0,
 }: FlyToBoxOverlayProps) => {
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
     setAnimate(true);
-    // Timer to play the sound for the second part of the animation (70% of 1200ms ≈ 840ms)
+    // Play sound for the second part of the animation after 600ms.
     const soundTimer = setTimeout(() => {
       const audio = new Audio(secondPartSoundSrc);
       audio.volume = 0.4;
@@ -32,7 +40,7 @@ const FlyToBoxOverlay = ({
 
     const timer = setTimeout(() => {
       onAnimationEnd();
-    }, 1200); // total animation duration
+    }, 1200);
 
     return () => {
       clearTimeout(soundTimer);
@@ -43,37 +51,37 @@ const FlyToBoxOverlay = ({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "absolute", // now relative to the container
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
         pointerEvents: "none",
-        zIndex: 0, // should be lower than the footer's z-index
+        zIndex: 1000,
       }}>
-      {flyDigits.map((fd) => {
-        // Calculate the horizontal and vertical displacement.
-        const deltaX = fd.targetX - fd.startX;
-        const deltaY = fd.targetY - fd.startY;
-
-        // Define an overshoot offset (e.g., 150px above the target)
+      {flyDigits.map((fd, index) => {
+        // Convert global coordinates to container-relative.
+        const startX = fd.startX - offsetX;
+        const startY = fd.startY - offsetY;
+        const targetX = fd.targetX - offsetX;
+        const targetY = fd.targetY - offsetY;
+        const deltaX = targetX - startX;
+        const deltaY = targetY - startY;
         const overshoot = 150;
-
-        // Build a keyframe animation with an intermediate overshoot step.
+        // Add a tiny extra offset per digit (3px per digit) only at the end of phase 1.
+        const spacingX = 6;
+        const extraOffsetX = index * spacingX;
         const animationStyle = animate
-          ? {
-              animation: `fly-${fd.id} 1.2s ease-in-out forwards`,
-            }
+          ? { animation: `fly-${fd.id} 1.2s ease-in-out forwards` }
           : {};
 
         return (
           <div
             key={fd.id}
             style={{
-              zIndex: 1,
               position: "absolute",
-              left: fd.startX,
-              top: fd.startY,
+              left: startX,
+              top: startY,
               fontSize: "24px",
               color: "#acecfc",
               fontWeight: "bold",
@@ -82,7 +90,6 @@ const FlyToBoxOverlay = ({
               ...animationStyle,
             }}>
             {fd.digit}
-            {/* Define keyframes inline */}
             <style>{`
               @keyframes fly-${fd.id} {
                 0% { 
@@ -90,8 +97,8 @@ const FlyToBoxOverlay = ({
                   opacity: 1;
                 }
                 60% { 
-                  transform: translate3d(${deltaX}px, ${
-              deltaY - overshoot
+                  transform: translate3d(${deltaX + extraOffsetX}px, ${
+              deltaY - overshoot + random(1, 4) * 6
             }px, 0);
                   opacity: 1;
                 }
@@ -99,7 +106,9 @@ const FlyToBoxOverlay = ({
                   opacity: 0.5;
                 }
                 100% { 
-                  transform: translate3d(${deltaX}px, ${deltaY - 30}px, 0);
+                  transform: translate3d(${deltaX + extraOffsetX}px, ${
+              deltaY - 30
+            }px, 0);
                   opacity: 0;
                 }
               }

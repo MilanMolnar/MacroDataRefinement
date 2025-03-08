@@ -11,6 +11,7 @@ interface BootScreenProps {
 const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
   const bootLines = [
     "LUMON OS",
+    "You can click to skip the boot sequence.",
     "parseElements: keyboard: 0 digitizer:  12 pointer 0 0 scroll: 0 led: 0",
     "startupTask",
     "Video has output streams: 1",
@@ -125,9 +126,9 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
       <div
         onClick={handleContainerClick}
         style={{
-          minHeight: "60vh",
-          width: "100%",
           paddingTop: "0px",
+          height: "800px",
+          width: "1070px",
           backgroundColor: "black",
           color: "#acecfc",
           fontFamily: "monospace",
@@ -136,7 +137,7 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
           alignItems: "center",
           justifyContent: "center",
         }}>
-        <div>
+        <div style={{}}>
           <RockerSwitch checked={switchedOn} onChange={handleSwitchChange} />
         </div>
       </div>
@@ -151,9 +152,10 @@ const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
         backgroundColor: "black",
         color: "#acecfc",
         fontFamily: "monospace",
-        padding: "20px",
-        width: "100vw",
-        height: "100vh",
+        paddingTop: "75px",
+        paddingLeft: "60px",
+        height: "700px",
+        width: "1050px",
         overflowY: "auto",
         textAlign: "left",
       }}>
