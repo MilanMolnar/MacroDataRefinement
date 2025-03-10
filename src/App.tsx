@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BootScreen from "./components/Boot";
-import HingedFolders, { Folder } from "./components/HingedFolders";
+import HingedFolders, { Folder } from "./components/HingedFolder/HingedFolders";
 import SeveranceMDRLayout from "./components/MDR/Layout";
 import SettingsMenu, { Settings } from "./components/Settings";
 import CustomCursor from "./components/Cursor";
@@ -8,12 +8,13 @@ import VolumeAdjuster from "./components/MDR/VolumeAdjuster";
 import bgMusicSrc from "./assets/sounds/music.mp3";
 import BuyMeACoffeeButton from "./components/bmc";
 import CRTFilterWrapper from "./components/CRTFilter";
-import HelpGuideModal from "./components/tutorial";
 import CustomAlert from "./components/MDR/CustomAlert";
 import { Analytics } from "@vercel/analytics/react";
 import Briefing from "./components/Briefing";
 import borderImageSrc from "./assets/border4.png";
 import MusicSelectorModal from "./components/MDR/MusicSelectorModal";
+import Folders from "./components/Folders";
+import HelpGuideModal from "./components/Tutorial";
 
 const defaultSettings: Settings = {
   containerWidth: 1010,
@@ -22,44 +23,95 @@ const defaultSettings: Settings = {
   rows: 12,
   cols: 36,
   headerHeight: 40,
-  shapePerType: 1, // internal property remains unchanged
+  shapePerType: 1,
 };
 
-const severance_folders = [
-  { id: 1, name: "Cold Harbor" },
-  { id: 2, name: "Bellingham" },
-  { id: 3, name: "Allentown" },
-  { id: 4, name: "Cairns" },
-  { id: 5, name: "Coleman" },
-  { id: 6, name: "Culpepper" },
-  { id: 7, name: "Dranesville" },
-  { id: 8, name: "Yakima" },
-  { id: 9, name: "Cielo" },
-  { id: 10, name: "Sunset Park" },
-  { id: 11, name: "Tumwater" },
-  { id: 12, name: "Jesup" },
-  { id: 13, name: "Kingsport" },
-  { id: 14, name: "Labrador" },
-  { id: 15, name: "Le Mars" },
-  { id: 16, name: "Longbranch" },
-  { id: 17, name: "Minsk" },
-  { id: 18, name: "Moonbeam" },
-  { id: 19, name: "Nanning" },
-  { id: 20, name: "Narva" },
-  { id: 21, name: "Ocula" },
-  { id: 22, name: "Pacoima" },
-  { id: 23, name: "Siena" },
-  { id: 24, name: "Astoria" },
-  { id: 25, name: "Chicxulub" },
-  { id: 26, name: "Eminence" },
-  { id: 27, name: "Tan An" },
-  { id: 28, name: "Santa Mira" },
-  { id: 29, name: "Waynesboro" },
-];
+const severanceFolders: Folder[] = Folders;
 
 type AppStep = "boot" | "folders" | "layout";
 
+// Common style objects for consistency
+const fullScreenCenterStyle: React.CSSProperties = {
+  width: "100vw",
+  height: "100vh",
+  backgroundImage:
+    "radial-gradient(circle at center, rgb(20, 27, 5) 0%, black 100%)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+};
+
+const modalFullScreenStyle: React.CSSProperties = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100vw",
+  height: "100vh",
+  zIndex: 7000,
+};
+
+const menuModalOverlayStyle: React.CSSProperties = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100vw",
+  height: "100vh",
+  backgroundColor: "rgba(0,0,0,0.8)",
+  zIndex: 6000,
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  cursor: "pointer",
+};
+
+const modalContentStyle: React.CSSProperties = {
+  backgroundColor: "black",
+  border: "2px solid white",
+  padding: "20px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+};
+
+const baseButtonStyle: React.CSSProperties = {
+  border: "2px solid white",
+  padding: "5px 10px",
+  cursor: "pointer",
+  fontFamily: "monospace",
+  color: "white",
+  backgroundColor: "black",
+};
+
 const App: React.FC = () => {
+  // State declarations
+  const [_, setPoweredOn] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [step, setStep] = useState<AppStep>("boot");
+  const [userFolderName, setUserFolderName] = useState<string>("");
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const [layoutKey, setLayoutKey] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showCursor, setShowCursor] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showMenuModal, setShowMenuModal] = useState(false);
+  const [showSounds, setShowSounds] = useState(false);
+  const [percentage, setPercentage] = useState<number>(0);
+  const [userWon, setUserWon] = useState(false);
+  const [bgMusic, setBgMusic] = useState<string>(bgMusicSrc);
+  const [bgVolume, setBgVolume] = useState<number>(0.5);
+  const [showMusicModal, setShowMusicModal] = useState(false);
+
+  const mutedRef = useRef(muted);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const minWidth = 1800;
+  const minHeight = 1000;
+  const boxWidth = Math.max(settings.containerWidth, minWidth);
+  const boxHeight = Math.max(settings.containerHeight, minHeight);
+
+  // Side effects and event handlers
   useEffect(() => {
     document.body.style.backgroundColor = "black";
     return () => {
@@ -78,32 +130,10 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const [_, setPoweredOn] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const mutedRef = useRef(muted);
   useEffect(() => {
     mutedRef.current = muted;
     if (audioRef.current) audioRef.current.muted = muted;
   }, [muted]);
-
-  const [step, setStep] = useState<AppStep>("boot");
-  const [userFolderName, setUserFolderName] = useState<string>("");
-  const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const [layoutKey, setLayoutKey] = useState(0);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(true);
-  const [showTutorial, setShowTutorial] = useState(false);
-  const [showCursor, setShowCursor] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
-  const [showMenuModal, setShowMenuModal] = useState(false);
-  const [showSounds, setShowSounds] = useState(false);
-
-  // Progress and win state.
-  const [percentage, setPercentage] = useState<number>(0);
-  const [userWon, setUserWon] = useState(false);
-
-  // Background music state.
-  const [bgMusic, setBgMusic] = useState<string>(bgMusicSrc);
 
   useEffect(() => {
     setUserWon(percentage >= 100);
@@ -115,15 +145,16 @@ const App: React.FC = () => {
         setShowMenuModal(true);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = bgVolume * 0.04;
+  }, [bgVolume]);
+
   const folderData: Folder[] = useMemo(() => {
-    const folders = [...severance_folders];
+    const folders = [...severanceFolders];
     if (userFolderName && !folders.some((f) => f.name === userFolderName)) {
       folders.push({ id: folders.length + 1, name: userFolderName });
     }
@@ -142,8 +173,9 @@ const App: React.FC = () => {
   };
 
   const handleFolderSelect = (selectedFolder: string) => {
-    if (selectedFolder === userFolderName) setStep("layout");
-    else {
+    if (selectedFolder === userFolderName) {
+      setStep("layout");
+    } else {
       setAlertMessage(
         "Access Denied: You are not authorized to access this folder."
       );
@@ -152,8 +184,7 @@ const App: React.FC = () => {
   };
 
   const handleShowCursor = () => {
-    if (showCursor) document.body.style.cursor = "pointer";
-    else document.body.style.cursor = "none";
+    document.body.style.cursor = showCursor ? "none" : "pointer";
     setShowCursor(!showCursor);
   };
 
@@ -163,17 +194,6 @@ const App: React.FC = () => {
     setLayoutKey(0);
     setPercentage(0);
   };
-
-  const minWidth = 1800;
-  const minHeight = 1000;
-  const boxWidth = Math.max(settings.containerWidth, minWidth);
-  const boxHeight = Math.max(settings.containerHeight, minHeight);
-
-  const [bgVolume, setBgVolume] = useState<number>(0.5);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = bgVolume * 0.04;
-  }, [bgVolume]);
 
   const handlePower = () => {
     if (audioRef.current) {
@@ -190,36 +210,24 @@ const App: React.FC = () => {
     const shareMessage = `I have brought glory to the company, try out this Lumon MDR simulator and make Kier proud. Link: ${window.location.href}`;
     navigator.clipboard
       .writeText(shareMessage)
-      .then(() => {
-        setAlertMessage("Share message copied! Paste it for your friends.");
-      })
-      .catch(() => {
-        setAlertMessage("Failed to copy share message. Please try again.");
-      });
+      .then(() =>
+        setAlertMessage("Share message copied! Paste it for your friends.")
+      )
+      .catch(() =>
+        setAlertMessage("Failed to copy share message. Please try again.")
+      );
   };
-
-  const [showMusicModal, setShowMusicModal] = useState(false);
 
   return (
     <>
-      {/* Main Container */}
-      <div
-        style={{
-          width: "100vw",
-          height: "100vh",
-          backgroundImage:
-            "radial-gradient(circle at center, rgb(20, 27, 5) 0%, black 100%)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}>
+      <div style={fullScreenCenterStyle}>
         <div
           style={{
             position: "relative",
             width: `${boxWidth}px`,
             height: `${boxHeight}px`,
             overflow: "hidden",
-            backgroundColor: "rgb(0, 0, 0, 0)",
+            backgroundColor: "transparent",
           }}>
           <CRTFilterWrapper>
             <div
@@ -247,7 +255,6 @@ const App: React.FC = () => {
                     width: "1050px",
                   }}>
                   <div style={{ textAlign: "center" }}>
-                    {/* Pass highlightFolder so that the parent folder is highlighted in green */}
                     <HingedFolders
                       folders={folderData}
                       onFolderSelect={handleFolderSelect}
@@ -290,15 +297,7 @@ const App: React.FC = () => {
                   />
                   <button
                     onClick={handleRestart}
-                    style={{
-                      marginTop: 10,
-                      backgroundColor: "red",
-                      color: "white",
-                      border: "2px solid white",
-                      padding: "5px 10px",
-                      cursor: "pointer",
-                      fontFamily: "monospace",
-                    }}>
+                    style={{ ...baseButtonStyle, backgroundColor: "red" }}>
                     Restart
                   </button>
                 </div>
@@ -325,65 +324,28 @@ const App: React.FC = () => {
 
       {showMenuModal && (
         <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.8)",
-            zIndex: 6000,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            cursor: "pointer",
-          }}>
-          <div
-            style={{
-              backgroundColor: "black",
-              border: "2px solid white",
-              padding: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-            }}>
+          style={menuModalOverlayStyle}
+          onClick={() => setShowMenuModal(false)}>
+          <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
             {!showSounds ? (
               <>
                 <div style={{ textAlign: "center" }}>MENU</div>
                 <button
                   onClick={() => setShowSettings(true)}
                   style={{
+                    ...baseButtonStyle,
                     backgroundColor: userWon ? "green" : "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
                   }}>
                   Settings
                 </button>
                 <button
                   onClick={() => setShowInfoModal(true)}
-                  style={{
-                    backgroundColor: "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}>
+                  style={baseButtonStyle}>
                   Briefing
                 </button>
                 <button
                   onClick={() => setShowTutorial(true)}
-                  style={{
-                    backgroundColor: "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}>
+                  style={baseButtonStyle}>
                   I need help!
                 </button>
                 <button
@@ -398,49 +360,26 @@ const App: React.FC = () => {
                     }
                   }}
                   style={{
+                    ...baseButtonStyle,
                     backgroundColor: userWon ? "green" : "gray",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
                     cursor: userWon ? "pointer" : "not-allowed",
-                    fontFamily: "monospace",
                   }}>
                   {showCursor ? "Normal Cursor" : "Lumon pointer"}
                 </button>
                 <button
                   onClick={() => setShowSounds(true)}
                   style={{
+                    ...baseButtonStyle,
                     backgroundColor: userWon ? "green" : "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
                   }}>
                   Sounds & Music
                 </button>
-                <button
-                  onClick={handleRestart}
-                  style={{
-                    backgroundColor: "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}>
+                <button onClick={handleRestart} style={baseButtonStyle}>
                   Restart
                 </button>
                 <button
                   onClick={() => setShowMenuModal(false)}
-                  style={{
-                    backgroundColor: "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}>
+                  style={baseButtonStyle}>
                   Close Menu
                 </button>
                 <button
@@ -461,12 +400,10 @@ const App: React.FC = () => {
                     }
                   }}
                   style={{
+                    ...baseButtonStyle,
                     backgroundColor: "white",
                     color: "black",
-                    border: "2px solid white",
                     padding: "6px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
                   }}>
                   Share with your innies!
                 </button>
@@ -477,14 +414,7 @@ const App: React.FC = () => {
                 <VolumeAdjuster onVolumeChange={setBgVolume} />
                 <button
                   onClick={() => setMuted((prev) => !prev)}
-                  style={{
-                    backgroundColor: "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}>
+                  style={baseButtonStyle}>
                   {muted ? "Unmute" : "Mute"}
                 </button>
                 <button
@@ -499,25 +429,15 @@ const App: React.FC = () => {
                     }
                   }}
                   style={{
+                    ...baseButtonStyle,
                     backgroundColor: userWon ? "green" : "gray",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
                     cursor: userWon ? "pointer" : "not-allowed",
-                    fontFamily: "monospace",
                   }}>
                   Change Music Box
                 </button>
                 <button
                   onClick={() => setShowSounds(false)}
-                  style={{
-                    backgroundColor: "black",
-                    color: "white",
-                    border: "2px solid white",
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                    fontFamily: "monospace",
-                  }}>
+                  style={baseButtonStyle}>
                   Back
                 </button>
               </>
@@ -525,7 +445,7 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Music Selector Modal */}
+
       {showMusicModal && (
         <MusicSelectorModal
           currentTrackSrc={bgMusic}
@@ -534,17 +454,8 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Foreground Modals */}
       {showSettings && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            zIndex: 7000,
-          }}>
+        <div style={modalFullScreenStyle}>
           <SettingsMenu
             initialSettings={settings}
             onSave={handleSaveSettings}
@@ -555,29 +466,13 @@ const App: React.FC = () => {
       )}
 
       {showInfoModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            zIndex: 7000,
-          }}>
+        <div style={modalFullScreenStyle}>
           <Briefing setShowInfoModal={setShowInfoModal} />
         </div>
       )}
 
       {showTutorial && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            zIndex: 7000,
-          }}>
+        <div style={modalFullScreenStyle}>
           <HelpGuideModal onClose={() => setShowTutorial(false)} />
         </div>
       )}

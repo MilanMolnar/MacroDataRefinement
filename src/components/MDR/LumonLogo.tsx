@@ -1,4 +1,4 @@
-import lumonWhite from "./lumon-white.png"; // adjust the path as needed
+import lumonWhite from "../../assets/lumon-white.png"; // adjust the path as needed
 
 const LumonLogo = () => {
   return (

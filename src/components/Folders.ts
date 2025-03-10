@@ -1,0 +1,35 @@
+import { Folder } from "./HingedFolder/HingedFolders";
+
+const severanceFolders: Folder[] = [
+  { id: 1, name: "Cold Harbor" },
+  { id: 2, name: "Bellingham" },
+  { id: 3, name: "Allentown" },
+  { id: 4, name: "Cairns" },
+  { id: 5, name: "Coleman" },
+  { id: 6, name: "Culpepper" },
+  { id: 7, name: "Dranesville" },
+  { id: 8, name: "Yakima" },
+  { id: 9, name: "Cielo" },
+  { id: 10, name: "Sunset Park" },
+  { id: 11, name: "Tumwater" },
+  { id: 12, name: "Jesup" },
+  { id: 13, name: "Kingsport" },
+  { id: 14, name: "Labrador" },
+  { id: 15, name: "Le Mars" },
+  { id: 16, name: "Longbranch" },
+  { id: 17, name: "Minsk" },
+  { id: 18, name: "Moonbeam" },
+  { id: 19, name: "Nanning" },
+  { id: 20, name: "Narva" },
+  { id: 21, name: "Ocula" },
+  { id: 22, name: "Pacoima" },
+  { id: 23, name: "Siena" },
+  { id: 24, name: "Astoria" },
+  { id: 25, name: "Chicxulub" },
+  { id: 26, name: "Eminence" },
+  { id: 27, name: "Tan An" },
+  { id: 28, name: "Santa Mira" },
+  { id: 29, name: "Waynesboro" },
+];
+
+export default severanceFolders;
