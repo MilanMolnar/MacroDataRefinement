@@ -8,14 +8,11 @@ const BuyMeACoffeeButton: React.FC = () => {
       target="_blank"
       rel="noopener noreferrer"
       style={{
-        position: "fixed",
-        bottom: "10px",
-        right: "10px",
         backgroundColor: "#ffffff",
         color: "#000000",
         border: "2px solid #000000",
         borderRadius: "12px", // Increased rounded corners
-        padding: "10px 15px",
+        padding: "6px 5px",
         textDecoration: "none",
         fontFamily: "'Cookie', cursive",
         fontSize: "1rem",
@@ -44,7 +41,7 @@ const BuyMeACoffeeButton: React.FC = () => {
           marginRight: "8px",
         }}
       />
-      Buy me a coffee
+      Support the creator
     </a>
   );
 };

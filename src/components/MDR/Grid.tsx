@@ -74,7 +74,7 @@ const Grid: React.FC<GridProps> = ({
           duration: randomInRange(4, 8),
           delay: randomInRange(0, 3),
           spawnDuration: randomInRange(1, 4),
-          spawnDelay: randomInRange(0, 1),
+          spawnDelay: randomInRange(0.5, 3.5),
           shapeId: undefined,
         });
       }
@@ -86,6 +86,7 @@ const Grid: React.FC<GridProps> = ({
   const [gridData, setGridData] = useState<CellData[][]>(initialGridData);
   const [pulse, setPulse] = useState(false);
   const [showNoShapeAlert, setShowNoShapeAlert] = useState(false);
+  const [showWrongContainerAlert, setShowWrongContainerAlert] = useState(false);
 
   useEffect(() => {
     if (openFooterBox !== null) {
@@ -369,9 +370,8 @@ const Grid: React.FC<GridProps> = ({
       ) {
         const requiredBox = shapeToBoxMap[focusedShape.type];
         if (openFooterBox !== requiredBox) {
-          console.log(
-            `Wrong box is open, the correct box for this shape is box ${requiredBox}`
-          );
+          setShowWrongContainerAlert(true);
+          setTimeout(() => setShowWrongContainerAlert(false), 2000);
           return;
         }
         if (!gridRef.current || !targetFooterBoxRect) return;
@@ -458,6 +458,7 @@ const Grid: React.FC<GridProps> = ({
       style={{
         position: "relative",
         overflow: "hidden",
+        paddingBottom: "5aspx",
         width: `${containerWidth}px`,
         height: `${containerHeight}px`,
         outline: "none",
@@ -512,6 +513,9 @@ const Grid: React.FC<GridProps> = ({
       </div>
       {showNoShapeAlert && (
         <CustomAlert message="Please hover the cursor over data that needs to be refined." />
+      )}
+      {showWrongContainerAlert && (
+        <CustomAlert message="Incorrect storage unit is open." />
       )}
     </div>
   );
