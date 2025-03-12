@@ -1,5 +1,5 @@
 import React from "react";
-import VolumeAdjuster from "./MDR/VolumeAdjuster";
+import VolumeAdjuster from "./VolumeAdjuster";
 import BuyMeACoffeeButton from "./bmc";
 import Modal from "./common/Modal";
 import Button from "./common/Button";

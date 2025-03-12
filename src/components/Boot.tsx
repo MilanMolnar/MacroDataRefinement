@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import typingSoundSrc from "../assets/sounds/typing.mp3";
 import RockerSwitch from "./RockerSwitch"; // adjust the path as needed
-import CustomAlert from "./MDR/CustomAlert";
+import CustomAlert from "./common/CustomAlert";
 
 interface BootScreenProps {
   onComplete: (input: string) => void;

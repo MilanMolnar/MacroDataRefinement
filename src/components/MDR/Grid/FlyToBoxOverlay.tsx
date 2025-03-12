@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import secondPartSoundSrc from "../../assets/sounds/binit.mp3";
+import secondPartSoundSrc from "../../../assets/sounds/binit.mp3";
 
 export interface FlyDigit {
   id: string;

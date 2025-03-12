@@ -1,9 +1,8 @@
-// src/components/HingedFolders.tsx
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import "./HingedFolders.css";
 import flipSoundSrc from "../../assets/sounds/hinge_flip.mp3";
-import CustomAlert from "../MDR/CustomAlert";
-import severanceFolders from "../Folders";
+import CustomAlert from "../common/CustomAlert";
+import severanceFolders from "./Folders";
 import LetterTabs from "./LetterTabs";
 import Terminal from "./Terminal";
 import HingeBars from "./HingeBars";
@@ -213,10 +212,13 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
       setAutoFlipCount((prevCount) => prevCount + 1);
     } else {
       if (authorizedFolder) {
-        setTerminalHistory((prev) => [
-          ...prev,
-          `RESULT: File "${authorizedFolder}" loaded successfully.`,
-        ]);
+        // Only add the success log if it isn’t already the last entry
+        setTerminalHistory((prev) => {
+          const lastLog = prev[prev.length - 1];
+          const newLog = `RESULT: File "${authorizedFolder}" loaded successfully.`;
+          if (lastLog === newLog) return prev;
+          return [...prev, newLog];
+        });
       }
       setTargetIndex(null);
       setAutoFlipCount(0);
@@ -251,7 +253,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
         setTerminalHistory((prev) => [
           ...prev,
           `QUERY: ${input}`,
-          `RESULT: Unauthorized.`,
+          `RESULT: Access Denied.`,
         ]);
       }
       setTerminalInput("");
@@ -273,7 +275,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
         setTerminalHistory((prev) => [
           ...prev,
           `QUERY: open`,
-          `RESULT: Unauthorized.`,
+          `RESULT: Access Denied.`,
         ]);
       }
       setTerminalInput("");
@@ -338,6 +340,13 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           currentIndex={currentIndex}
           onClick={() => {
             if (!isFlipping && onFolderSelect) onFolderSelect(currentFolder);
+            if (!isFlipping && currentFolder != authorizedFolder) {
+              setTerminalHistory((prev) => [
+                ...prev,
+                `POINTER ACTION: Opening "${currentFolder}"...`,
+                `RESULT: Access Denied.`,
+              ]);
+            }
           }}
           onAnimationEnd={handleAnimationEnd}
         />
@@ -353,7 +362,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           );
           const borderColor = `hsl(195, 77%, ${borderLightness}%)`;
           const distance = 4 - tab.lifetime;
-          const zIndex = 100 - distance;
+          const zIndex = 99 - distance;
           return (
             <div
               key={tab.letter}
@@ -365,7 +374,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
                 backgroundColor: "#000",
                 border: `2px solid ${borderColor}`,
                 zIndex,
-                marginBottom: distance * 1.3,
+                marginBottom: distance * 1.5,
               }}
             />
           );

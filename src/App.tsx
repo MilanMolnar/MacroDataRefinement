@@ -1,20 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import BootScreen from "./components/Boot";
-import HingedFolders, { Folder } from "./components/HingedFolder/HingedFolders";
+import HingedFolders, { Folder } from "./components/HingedFolder";
 import SeveranceMDRLayout from "./components/MDR/Layout";
-import SettingsMenu, { Settings } from "./components/Settings";
+import SettingsMenu, { Settings } from "./components/modals/Settings";
 import CustomCursor from "./components/Cursor";
-import VolumeAdjuster from "./components/MDR/VolumeAdjuster";
+import VolumeAdjuster from "./components/VolumeAdjuster";
 import bgMusicSrc from "./assets/sounds/music.mp3";
 import BuyMeACoffeeButton from "./components/bmc";
 import CRTFilterWrapper from "./components/CRTFilter";
-import CustomAlert from "./components/MDR/CustomAlert";
+import CustomAlert from "./components/common/CustomAlert";
 import { Analytics } from "@vercel/analytics/react";
-import Briefing from "./components/Briefing";
+import Briefing from "./components/modals/Briefing";
 import borderImageSrc from "./assets/border4.png";
-import MusicSelectorModal from "./components/MDR/MusicSelectorModal";
-import Folders from "./components/Folders";
-import HelpGuideModal from "./components/Tutorial";
+import MusicSelectorModal from "./components/MusicSelectorModal";
+import Folders from "./components/HingedFolder/Folders";
+import HelpGuideModal from "./components/modals/Tutorial";
 
 const defaultSettings: Settings = {
   containerWidth: 1010,
@@ -175,11 +175,6 @@ const App: React.FC = () => {
   const handleFolderSelect = (selectedFolder: string) => {
     if (selectedFolder === userFolderName) {
       setStep("layout");
-    } else {
-      setAlertMessage(
-        "Access Denied: You are not authorized to access this folder."
-      );
-      setTimeout(() => setAlertMessage(""), 2000);
     }
   };
 
@@ -228,6 +223,7 @@ const App: React.FC = () => {
             height: `${boxHeight}px`,
             overflow: "hidden",
             backgroundColor: "transparent",
+            cursor: `${showCursor ? "none" : "pointer"}`,
           }}>
           <CRTFilterWrapper>
             <div
@@ -302,7 +298,6 @@ const App: React.FC = () => {
                   </button>
                 </div>
               )}
-              {showCursor && <CustomCursor />}
             </div>
           </CRTFilterWrapper>
           <img
@@ -480,6 +475,7 @@ const App: React.FC = () => {
       <audio ref={audioRef} src={bgMusic} loop autoPlay preload="auto" />
       {alertMessage && <CustomAlert message={alertMessage} />}
       <Analytics />
+      {showCursor && <CustomCursor />}
     </>
   );
 };

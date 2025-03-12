@@ -1,7 +1,6 @@
 import React, { forwardRef, useState, useEffect, useRef } from "react";
-// Import your sound files:
-import openSoundSrc from "../../assets/sounds/open.mp3";
-import closeSoundSrc from "../../assets/sounds/close.mp3";
+import openSoundSrc from "../../../assets/sounds/open.mp3";
+import closeSoundSrc from "../../../assets/sounds/close.mp3";
 
 interface FooterBoxProps {
   label: number;

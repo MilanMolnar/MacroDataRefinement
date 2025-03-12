@@ -1,4 +1,4 @@
-import { Folder } from "./HingedFolder/HingedFolders";
+import { Folder } from ".";
 
 const severanceFolders: Folder[] = [
   { id: 1, name: "Cold Harbor" },
