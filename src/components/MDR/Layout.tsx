@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Header from "./Header";
-import Grid from "./Grid";
-import FooterBar from "./FooterBar";
-import FooterText from "./FooterText";
+import Grid from "./Grid/Grid";
+import FooterBar from "./Footer/FooterBar";
+import FooterText from "./Footer/FooterText";
 import AnimationStyles from "./AnimationStyles";
-import { ShapeType } from "./shapeDefinitions";
-import FlyToBoxOverlay, { FlyDigit } from "./FlyToBoxOverlay";
-import { Settings } from "./../Settings";
+import { ShapeType } from "./Grid/shapeDefinitions";
+import FlyToBoxOverlay, { FlyDigit } from "./Grid/FlyToBoxOverlay";
+import { Settings } from "../modals/Settings";
 import winSoundSrc from "../../assets/sounds/win-final.mp3";
-import CustomAlert from "./CustomAlert";
+import CustomAlert from "../common/CustomAlert";
 
 interface SeveranceMDRLayoutProps {
   headerText: string;

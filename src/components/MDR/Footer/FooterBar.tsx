@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import FooterBox from "./FooterBox";
-import { ShapeType } from "./shapeDefinitions";
+import { ShapeType } from "../Grid/shapeDefinitions";
 
 interface FooterBarProps {
   progress: Record<ShapeType, number>;
@@ -57,7 +57,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               label={num}
               percentage={`${progress[types[num - 1]]}%`}
               open={openBox === num}
-              ref={(el) => {
+              ref={(el: any) => {
                 footerBoxRefs.current[num - 1] = el;
               }}
             />

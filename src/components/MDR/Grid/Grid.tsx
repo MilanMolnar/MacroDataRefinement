@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import GridCell, { CellData } from "./GridCell";
 import { shapeDefinitions, ShapeType } from "./shapeDefinitions";
-import hoverSound from "../../assets/sounds/hover.mp3"; // Replace with your hover sound file's path
-import CustomAlert from "./CustomAlert";
+import hoverSound from "../../../assets/sounds/hover.mp3"; // Replace with your hover sound file's path
+import CustomAlert from "../../common/CustomAlert";
 
 export interface Shape {
   id: number;
