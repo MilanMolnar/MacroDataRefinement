@@ -361,3 +361,46 @@
   border: 2px solid #000;
   cursor: pointer;
 }
+.open-terminal-button {
+  z-index: 1000;
+  top: 550px;
+  left: 645px;
+  width: 40px;
+  height: 40px;
+  border: 2px solid #acecfc;
+  border-radius: 20%;
+  background: #000;
+  color: #acecfc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  font-size: 22px;
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+.open-terminal-text-pre {
+  position: absolute;
+  z-index: 1000;
+  top: 530px;
+  left: -40px;
+  height: 40px;
+  color: #acecfc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  font-size: 22px;
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+
+.open-terminal-button:hover {
+  background-color: #222;
+}

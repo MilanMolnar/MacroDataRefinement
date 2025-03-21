@@ -3,6 +3,7 @@ import defaultMusic from "../assets/sounds/music.mp3";
 import Initiate_refinement from "../assets/sounds/Initiate_refinement.mp3";
 import Music_dance_exp from "../assets/sounds/Music_dance_exp.mp3";
 import Mdr_file_assignment from "../assets/sounds/MDR_file_assignment.mp3";
+import Cold_Harbor from "../assets/sounds/win2.mp3";
 
 interface MusicTrack {
   id: string;
@@ -38,6 +39,11 @@ const MusicSelectorModal: React.FC<MusicSelectorModalProps> = ({
       id: "MDR_file_assignment",
       name: "MDR File Assignment",
       src: Mdr_file_assignment,
+    },
+    {
+      id: "Cold_Harbor",
+      name: "Cold Harbor",
+      src: Cold_Harbor,
     },
   ];
 

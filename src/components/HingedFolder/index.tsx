@@ -37,6 +37,7 @@ const playFlipSound = () => {
 const HingedFolders: React.FC<HingedFoldersProps> = ({
   folders = severanceFolders,
   onFolderSelect,
+  highlightFolder,
 }) => {
   const sortedFolders = useMemo(
     () => [...folders].sort((a, b) => a.name.localeCompare(b.name)),
@@ -50,14 +51,19 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
   const [alertMessage, setAlertMessage] = useState<string>("");
   const [terminalInput, setTerminalInput] = useState<string>("");
   const [terminalHistory, setTerminalHistory] = useState<string[]>([
-    "SYSTEM: Macro data refinement files successfully loaded",
+    "SYSTEM: Macro data refinement files successfully loaded, awaiting search query...",
   ]);
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [autoFlipCount, setAutoFlipCount] = useState(0);
   const [autoFlipTotal, setAutoFlipTotal] = useState(0);
   const [authorizedFolder, setAuthorizedFolder] = useState<string>("");
 
+  // State for terminal visibility (initially hidden)
+  const [showTerminal, setShowTerminal] = useState(false);
+
   const terminalHistoryRef = useRef<HTMLDivElement>(null);
+  // Flag to ensure the auto-flip effect runs only once
+  const hasAutoFlipped = useRef(false);
 
   useEffect(() => {
     if (terminalHistoryRef.current) {
@@ -66,6 +72,46 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     }
   }, [terminalHistory]);
 
+  // Global keydown listener for "B" to open the terminal
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "b" && !showTerminal) {
+        setShowTerminal(true);
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [showTerminal]);
+
+  // Auto-flip effect: if highlightFolder is provided and is not already the current folder,
+  // then automatically trigger the flip.
+  useEffect(() => {
+    if (highlightFolder && !hasAutoFlipped.current) {
+      const foundIndex = sortedFolders.findIndex(
+        (folder) => folder.name.toLowerCase() === highlightFolder.toLowerCase()
+      );
+      if (foundIndex !== -1 && foundIndex !== currentIndex) {
+        hasAutoFlipped.current = true;
+        const steps =
+          (foundIndex - currentIndex + sortedFolders.length) %
+          sortedFolders.length;
+        setAutoFlipTotal(steps);
+        setAutoFlipCount(0);
+        setTargetIndex(foundIndex);
+        setAuthorizedFolder(sortedFolders[foundIndex].name);
+        setTerminalHistory((prev) => [
+          ...prev,
+          `QUERY: Automatically flipping to "${highlightFolder}"...`,
+        ]);
+        if (!isFlipping) {
+          playFlipSound();
+          setIsFlipping(true);
+        }
+      }
+    }
+  }, [highlightFolder, sortedFolders, currentIndex, isFlipping]);
+
+  // Setup for letter tabs and folder offsets
   const nextIndex = (currentIndex + 1) % sortedFolders.length;
   const currentFolder = sortedFolders[currentIndex].name;
   const nextFolder = sortedFolders[nextIndex].name;
@@ -212,7 +258,6 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
       setAutoFlipCount((prevCount) => prevCount + 1);
     } else {
       if (authorizedFolder) {
-        // Only add the success log if it isn’t already the last entry
         setTerminalHistory((prev) => {
           const lastLog = prev[prev.length - 1];
           const newLog = `RESULT: File "${authorizedFolder}" loaded successfully.`;
@@ -230,6 +275,15 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     const input = terminalInput.trim();
     if (!input) return;
 
+    // "close" command to hide the terminal
+    if (input.toLowerCase() === "close") {
+      setTerminalHistory((prev) => [...prev, "Terminal closed."]);
+      setShowTerminal(false);
+      setTerminalInput("");
+      return;
+    }
+
+    // Command: change directory (cd)
     if (input.toLowerCase().startsWith("cd ")) {
       const folderName = input.substring(3).trim();
       let auth = authorizedFolder;
@@ -260,17 +314,19 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
       return;
     }
 
+    // Command: open
     if (input.toLowerCase() === "open") {
       if (
         authorizedFolder &&
-        currentFolder.toLowerCase() === authorizedFolder.toLowerCase()
+        sortedFolders[currentIndex].name.toLowerCase() ===
+          authorizedFolder.toLowerCase()
       ) {
         setTerminalHistory((prev) => [
           ...prev,
           `QUERY: open`,
-          `RESULT: Opening "${currentFolder}"...`,
+          `RESULT: Opening "${sortedFolders[currentIndex].name}"...`,
         ]);
-        if (onFolderSelect) onFolderSelect(currentFolder);
+        if (onFolderSelect) onFolderSelect(sortedFolders[currentIndex].name);
       } else {
         setTerminalHistory((prev) => [
           ...prev,
@@ -282,6 +338,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
       return;
     }
 
+    // Command: search for a file by name
     const foundIndex = sortedFolders.findIndex(
       (folder) => folder.name.toLowerCase() === input.toLowerCase()
     );
@@ -340,7 +397,7 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           currentIndex={currentIndex}
           onClick={() => {
             if (!isFlipping && onFolderSelect) onFolderSelect(currentFolder);
-            if (!isFlipping && currentFolder != authorizedFolder) {
+            if (!isFlipping && currentFolder !== authorizedFolder) {
               setTerminalHistory((prev) => [
                 ...prev,
                 `POINTER ACTION: Opening "${currentFolder}"...`,
@@ -380,17 +437,30 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           );
         })}
       </div>
-      <Terminal
-        terminalHistory={terminalHistory}
-        terminalInput={terminalInput}
-        onInputChange={(e) => setTerminalInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            handleTerminalSubmit();
-          }
-        }}
-        historyRef={terminalHistoryRef}
-      />
+      {/* Conditional rendering: either the Terminal or the open-terminal text with button */}
+      {showTerminal ? (
+        <Terminal
+          terminalHistory={terminalHistory}
+          terminalInput={terminalInput}
+          onInputChange={(e) => setTerminalInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleTerminalSubmit();
+            }
+          }}
+          historyRef={terminalHistoryRef}
+        />
+      ) : (
+        <div className="open-terminal-container">
+          <p className="open-terminal-text-pre">Open the terminal with key:</p>
+          <div
+            className="open-terminal-button"
+            onClick={() => setShowTerminal(true)}
+            title="Press B or click here to open the terminal">
+            B
+          </div>
+        </div>
+      )}
       {alertMessage && <CustomAlert message={alertMessage} />}
     </div>
   );

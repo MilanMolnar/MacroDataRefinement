@@ -30,7 +30,7 @@ const Terminal: React.FC<TerminalProps> = ({
         value={terminalInput}
         onChange={onInputChange}
         onKeyDown={onKeyDown}
-        placeholder="> "
+        placeholder="> Waiting for command..."
       />
     </div>
   );
