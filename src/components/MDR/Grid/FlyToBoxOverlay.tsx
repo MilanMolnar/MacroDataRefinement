@@ -13,9 +13,7 @@ export interface FlyDigit {
 interface FlyToBoxOverlayProps {
   flyDigits: FlyDigit[];
   onAnimationEnd: () => void;
-  // Offsets of the container relative to the viewport.
-  offsetX?: number;
-  offsetY?: number;
+  viewportScale?: number;
 }
 
 const random = (min: number, max: number) =>
@@ -24,8 +22,7 @@ const random = (min: number, max: number) =>
 const FlyToBoxOverlay = ({
   flyDigits,
   onAnimationEnd,
-  offsetX = 0,
-  offsetY = 0,
+  viewportScale = 1,
 }: FlyToBoxOverlayProps) => {
   const [animate, setAnimate] = useState(false);
 
@@ -51,25 +48,27 @@ const FlyToBoxOverlay = ({
   return (
     <div
       style={{
-        position: "absolute", // now relative to the container
+        // Rendered via ReactDOM.createPortal at document.body so position:fixed
+        // is always relative to the true viewport — unaffected by any CSS
+        // transform on the game container.
+        position: "fixed",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
         pointerEvents: "none",
-        zIndex: 1000,
+        zIndex: 5000,
       }}>
       {flyDigits.map((fd, index) => {
-        // Convert global coordinates to container-relative.
-        const startX = fd.startX - offsetX;
-        const startY = fd.startY - offsetY;
-        const targetX = fd.targetX - offsetX;
-        const targetY = fd.targetY - offsetY;
-        const deltaX = targetX - startX;
-        const deltaY = targetY - startY;
+        // fd.startX/Y and fd.targetX/Y are already in viewport coordinates,
+        // so they can be used directly with position:fixed.
+        const startX = fd.startX;
+        const startY = fd.startY;
+        const deltaX = fd.targetX - startX;
+        const deltaY = fd.targetY - startY;
         const overshoot = 150;
-        // Add a tiny extra offset per digit (3px per digit) only at the end of phase 1.
-        const spacingX = 6;
+        // Scale spacing so digits don't overlap disproportionately at small sizes.
+        const spacingX = 6 * viewportScale;
         const extraOffsetX = index * spacingX;
         const animationStyle = animate
           ? { animation: `fly-${fd.id} 1.2s ease-in-out forwards` }
@@ -82,7 +81,7 @@ const FlyToBoxOverlay = ({
               position: "absolute",
               left: startX,
               top: startY,
-              fontSize: "24px",
+              fontSize: `${Math.round(24 * viewportScale)}px`,
               color: "#acecfc",
               fontWeight: "bold",
               willChange: "transform",

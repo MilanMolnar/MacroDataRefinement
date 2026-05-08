@@ -8,20 +8,21 @@ interface BootScreenProps {
   onPower?: () => void;
 }
 
+const bootLines = [
+  "LUMON OS",
+  "You can click to skip the boot sequence.",
+  "parseElements: keyboard: 0 digitizer:  12 pointer 0 0 scroll: 0 led: 0",
+  "startupTask",
+  "Video has output streams: 1",
+  "Reuse output buffer index:2 dev:Code Output offset:184000 size20800",
+  "Audio has output streams: 1",
+  "DisableInput = 0",
+  "skipCached = 0",
+  "PortTyped:3, Lenght: 128",
+  "…",
+];
+
 const BootScreen: React.FC<BootScreenProps> = ({ onComplete, onPower }) => {
-  const bootLines = [
-    "LUMON OS",
-    "You can click to skip the boot sequence.",
-    "parseElements: keyboard: 0 digitizer:  12 pointer 0 0 scroll: 0 led: 0",
-    "startupTask",
-    "Video has output streams: 1",
-    "Reuse output buffer index:2 dev:Code Output offset:184000 size20800",
-    "Audio has output streams: 1",
-    "DisableInput = 0",
-    "skipCached = 0",
-    "PortTyped:3, Lenght: 128",
-    "…",
-  ];
   const promptLine = ">Enter file name: ";
 
   const [bootStarted, setBootStarted] = useState(false);

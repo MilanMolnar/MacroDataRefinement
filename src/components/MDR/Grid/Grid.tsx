@@ -43,6 +43,47 @@ interface GridProps {
   onAnimationStart: (flyDigits: FlyDigit[], shapeId: number) => void;
   refreshCompletedShapeId: number | null; // ID of shape whose cells should refresh
   onShapeRefreshed: () => void; // Callback after refresh is done
+  viewportScale?: number;
+}
+
+const shapeToBoxMap: Record<ShapeType, number> = {
+  plus: 1,
+  L: 2,
+  T: 3,
+  rectangle: 4,
+  hline: 5,
+};
+
+function clampOffset(
+  x: number,
+  y: number,
+  currentScale: number,
+  containerWidth: number,
+  containerHeight: number,
+  gridNaturalWidth: number,
+  gridNaturalHeight: number
+) {
+  const scaledWidth = gridNaturalWidth * currentScale;
+  const scaledHeight = gridNaturalHeight * currentScale;
+  let clampedX = x;
+  let clampedY = y;
+  if (scaledWidth >= containerWidth) {
+    const minX = containerWidth - scaledWidth;
+    const maxX = 0;
+    if (clampedX < minX) clampedX = minX;
+    if (clampedX > maxX) clampedX = maxX;
+  } else {
+    clampedX = (containerWidth - scaledWidth) / 2;
+  }
+  if (scaledHeight >= containerHeight) {
+    const minY = containerHeight - scaledHeight;
+    const maxY = 0;
+    if (clampedY < minY) clampedY = minY;
+    if (clampedY > maxY) clampedY = maxY;
+  } else {
+    clampedY = (containerHeight - scaledHeight) / 2;
+  }
+  return { x: clampedX, y: clampedY };
 }
 
 const Grid: React.FC<GridProps> = ({
@@ -62,6 +103,7 @@ const Grid: React.FC<GridProps> = ({
   onAnimationStart,
   refreshCompletedShapeId,
   onShapeRefreshed,
+  viewportScale = 1,
 }) => {
   // (1) Create grid data once.
   const initialGridData = useMemo(() => {
@@ -157,9 +199,6 @@ const Grid: React.FC<GridProps> = ({
 
   // **New useEffect** to update shapes state when initialShapes changes:
   const [shapes, setShapes] = useState<Shape[]>(initialShapes);
-  useEffect(() => {
-    setShapes(initialShapes);
-  }, [initialShapes]);
   const [qKeyLock, setQKeyLock] = useState(false);
   // (2) Pan/Zoom state.
   const gridRef = useRef<HTMLDivElement>(null);
@@ -174,32 +213,12 @@ const Grid: React.FC<GridProps> = ({
   );
   const maxScale = 5;
 
-  function clampOffset(x: number, y: number, currentScale: number) {
-    const scaledWidth = gridNaturalWidth * currentScale;
-    const scaledHeight = gridNaturalHeight * currentScale;
-    let clampedX = x;
-    let clampedY = y;
-    if (scaledWidth >= containerWidth) {
-      const minX = containerWidth - scaledWidth;
-      const maxX = 0;
-      if (clampedX < minX) clampedX = minX;
-      if (clampedX > maxX) clampedX = maxX;
-    } else {
-      clampedX = (containerWidth - scaledWidth) / 2;
-    }
-    if (scaledHeight >= containerHeight) {
-      const minY = containerHeight - scaledHeight;
-      const maxY = 0;
-      if (clampedY < minY) clampedY = minY;
-      if (clampedY > maxY) clampedY = maxY;
-    } else {
-      clampedY = (containerHeight - scaledHeight) / 2;
-    }
-    return { x: clampedX, y: clampedY };
+  function clampOffsetLocal(x: number, y: number, currentScale: number) {
+    return clampOffset(x, y, currentScale, containerWidth, containerHeight, gridNaturalWidth, gridNaturalHeight);
   }
 
   useEffect(() => {
-    const { x, y } = clampOffset(offsetX, offsetY, scale);
+    const { x, y } = clampOffsetLocal(offsetX, offsetY, scale);
     if (x !== offsetX || y !== offsetY) {
       setOffsetX(x);
       setOffsetY(y);
@@ -214,8 +233,10 @@ const Grid: React.FC<GridProps> = ({
     e.preventDefault();
     const rect = gridRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    // Divide by viewportScale to convert viewport px → design px,
+    // so zoom stays consistent regardless of CSS scale on the game container.
+    const mouseX = (e.clientX - rect.left) / viewportScale;
+    const mouseY = (e.clientY - rect.top) / viewportScale;
     const zoomSpeed = 0.001;
     let newScale = scale - e.deltaY * zoomSpeed;
     newScale = Math.max(minScale, Math.min(newScale, maxScale));
@@ -224,7 +245,7 @@ const Grid: React.FC<GridProps> = ({
     setScale(newScale);
     const newOffsetX = mouseX - oldWorldX * newScale;
     const newOffsetY = mouseY - oldWorldY * newScale;
-    const { x: cx, y: cy } = clampOffset(newOffsetX, newOffsetY, newScale);
+    const { x: cx, y: cy } = clampOffsetLocal(newOffsetX, newOffsetY, newScale);
     setOffsetX(cx);
     setOffsetY(cy);
   };
@@ -233,8 +254,9 @@ const Grid: React.FC<GridProps> = ({
   const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null);
   const handleGridMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    // Divide by viewportScale to convert viewport px → design px.
+    const mouseX = (e.clientX - rect.left) / viewportScale;
+    const mouseY = (e.clientY - rect.top) / viewportScale;
     const gridX = (mouseX - offsetX) / scale;
     const gridY = (mouseY - offsetY) / scale;
     const col = Math.floor(gridX / (cellWidth + colGap));
@@ -298,14 +320,6 @@ const Grid: React.FC<GridProps> = ({
       if (rowDiff === 1 && colDiff === 1) return "cellScaleDiag";
     }
     return "cellScaleNormal";
-  };
-
-  const shapeToBoxMap: Record<ShapeType, number> = {
-    plus: 1,
-    L: 2,
-    T: 3,
-    rectangle: 4,
-    hline: 5,
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -379,16 +393,20 @@ const Grid: React.FC<GridProps> = ({
           const cellLeft = pos.col * (cellWidth + colGap);
           const cellTop = pos.row * (cellHeight + rowGap);
           const gridRect = gridRef.current!.getBoundingClientRect();
-          const startX = gridRect.left + offsetX + cellLeft * scale;
-          const startY = gridRect.top + offsetY + cellTop * scale;
+          // offsetX/offsetY and cellLeft/cellTop are in design pixels;
+          // multiply by viewportScale to get true viewport coordinates.
+          const startX =
+            gridRect.left + (offsetX + cellLeft * scale) * viewportScale;
+          const startY =
+            gridRect.top + (offsetY + cellTop * scale) * viewportScale;
           const targetX =
             targetFooterBoxRect.left +
             targetFooterBoxRect.width / 2 -
-            cellWidth / 2;
+            (cellWidth * viewportScale) / 2;
           const targetY =
             targetFooterBoxRect.top +
             targetFooterBoxRect.height / 2 -
-            cellHeight / 2;
+            (cellHeight * viewportScale) / 2;
           return {
             id: `${focusedShape.id}-${idx}`,
             digit: gridData[pos.row][pos.col].digit!,
@@ -411,7 +429,7 @@ const Grid: React.FC<GridProps> = ({
       e.preventDefault();
       const newOffsetX = offsetX + dX;
       const newOffsetY = offsetY + dY;
-      const { x: cx, y: cy } = clampOffset(newOffsetX, newOffsetY, scale);
+      const { x: cx, y: cy } = clampOffsetLocal(newOffsetX, newOffsetY, scale);
       setOffsetX(cx);
       setOffsetY(cy);
     }
@@ -458,7 +476,6 @@ const Grid: React.FC<GridProps> = ({
       style={{
         position: "relative",
         overflow: "hidden",
-        paddingBottom: "5aspx",
         width: `${containerWidth}px`,
         height: `${containerHeight}px`,
         outline: "none",

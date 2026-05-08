@@ -57,7 +57,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
               label={num}
               percentage={`${progress[types[num - 1]]}%`}
               open={openBox === num}
-              ref={(el: any) => {
+              ref={(el: HTMLDivElement | null) => {
                 footerBoxRefs.current[num - 1] = el;
               }}
             />

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Header from "./Header";
 import Grid from "./Grid/Grid";
 import FooterBar from "./Footer/FooterBar";
@@ -12,18 +13,18 @@ import CustomAlert from "../common/CustomAlert";
 
 interface SeveranceMDRLayoutProps {
   headerText: string;
-  percentage: string;
   logoUrl?: string;
   settings: Settings;
   // New prop to notify parent when win condition is met.
   onWin?: () => void;
+  viewportScale?: number;
 }
 
 const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
   headerText,
-  logoUrl,
   settings,
   onWin,
+  viewportScale = 1,
 }) => {
   // Destructure settings values
   const {
@@ -88,26 +89,6 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
 
   // Create a ref for the main container.
   const containerRef = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  // Compute the container's offset relative to the viewport.
-  useEffect(() => {
-    const updateOffset = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setOffset({ x: rect.left, y: rect.top });
-      }
-    };
-
-    // Calculate the offset initially.
-    updateOffset();
-
-    // Recalculate the offset on window resize.
-    window.addEventListener("resize", updateOffset);
-    return () => {
-      window.removeEventListener("resize", updateOffset);
-    };
-  }, []);
 
   // Compute header percentage.
   const headerPercentage = useMemo(() => {
@@ -276,7 +257,6 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
           <Header
             headerText={headerText}
             percentage={headerPercentage}
-            logoUrl={logoUrl}
           />
           <hr style={lineStyle} />
           <hr style={lineStyleBlack} />
@@ -308,6 +288,7 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
               onAnimationStart={handleAnimationStart}
               refreshCompletedShapeId={completedShapeId}
               onShapeRefreshed={() => setCompletedShapeId(null)}
+              viewportScale={viewportScale}
             />
           </div>
           <hr style={lineStyle} />
@@ -326,14 +307,15 @@ const SeveranceMDRLayout: React.FC<SeveranceMDRLayoutProps> = ({
         </div>
       </div>
 
-      {flyDigits.length > 0 && (
-        <FlyToBoxOverlay
-          flyDigits={flyDigits}
-          onAnimationEnd={handleAnimationEnd}
-          offsetX={offset.x}
-          offsetY={offset.y}
-        />
-      )}
+      {flyDigits.length > 0 &&
+        createPortal(
+          <FlyToBoxOverlay
+            flyDigits={flyDigits}
+            onAnimationEnd={handleAnimationEnd}
+            viewportScale={viewportScale}
+          />,
+          document.body
+        )}
 
       {/* Thank You Modal */}
       {showThankYouModal && (

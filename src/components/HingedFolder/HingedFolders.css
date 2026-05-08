@@ -209,6 +209,29 @@
 }
 
 /*****************************************************
+ * Backward flip card overlay.
+ * Starts at the same end-state as flipForward, reverses
+ * back to the top position. Same pivot (bottom center).
+ *****************************************************/
+@keyframes flipBackward {
+  0% {
+    transform: translate(-50%, 20px) rotateX(-180deg);
+  }
+  100% {
+    transform: translate(-50%, 0) rotateX(0deg);
+  }
+}
+
+.backward-flip-card {
+  top: 0;
+  z-index: 101;
+  animation: flipBackward var(--flip-duration, 0.2s) ease forwards;
+  transform-origin: bottom center;
+  cursor: default;
+  user-select: none;
+}
+
+/*****************************************************
  * Container that holds both left and right sets of bars.
  *****************************************************/
 .side-bars-container {

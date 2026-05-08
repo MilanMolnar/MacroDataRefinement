@@ -16,31 +16,30 @@ interface MusicSelectorModalProps {
   onClose: () => void;
 }
 
+const tracks: MusicTrack[] = [
+  { id: "default", name: "Default Music", src: defaultMusic },
+  {
+    id: "Initiate_refinement",
+    name: "Initiate Refinement",
+    src: Initiate_refinement,
+  },
+  {
+    id: "Music_dance_exp",
+    name: "Music Dance Experience",
+    src: Music_dance_exp,
+  },
+  {
+    id: "MDR_file_assignment",
+    name: "MDR File Assignment",
+    src: Mdr_file_assignment,
+  },
+];
+
 const MusicSelectorModal: React.FC<MusicSelectorModalProps> = ({
   currentTrackSrc,
   onMusicSelect,
   onClose,
 }) => {
-  // Define available music tracks using imported files.
-  const tracks: MusicTrack[] = [
-    { id: "default", name: "Default Music", src: defaultMusic },
-    {
-      id: "Initiate_refinement",
-      name: "Initiate Refinement",
-      src: Initiate_refinement,
-    },
-    {
-      id: "Music_dance_exp",
-      name: "Music Dance Experience",
-      src: Music_dance_exp,
-    },
-    {
-      id: "MDR_file_assignment",
-      name: "MDR File Assignment",
-      src: Mdr_file_assignment,
-    },
-  ];
-
   const [selectedTrack, setSelectedTrack] = useState<string>(currentTrackSrc);
 
   const handleApply = () => {

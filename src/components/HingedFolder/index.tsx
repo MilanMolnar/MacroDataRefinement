@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import "./HingedFolders.css";
 import flipSoundSrc from "../../assets/sounds/hinge_flip.mp3";
-import CustomAlert from "../common/CustomAlert";
 import severanceFolders from "./Folders";
 import LetterTabs from "./LetterTabs";
-import Terminal from "./Terminal";
 import HingeBars from "./HingeBars";
 import Card from "./Card";
 import BottomCard from "./BottomCard";
+import BackwardFlipCard from "./BackwardFlipCard";
 
 export interface Folder {
   id: number;
@@ -25,7 +24,6 @@ interface BottomTab {
 interface HingedFoldersProps {
   folders?: Folder[];
   onFolderSelect?: (folderName: string) => void;
-  highlightFolder?: string;
 }
 
 const playFlipSound = () => {
@@ -47,28 +45,13 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
   const [removedTabs, setRemovedTabs] = useState<Set<string>>(new Set());
   const [barsOffset, setBarsOffset] = useState(0);
   const [bottomTabs, setBottomTabs] = useState<BottomTab[]>([]);
-  const [alertMessage, setAlertMessage] = useState<string>("");
-  const [terminalInput, setTerminalInput] = useState<string>("");
-  const [terminalHistory, setTerminalHistory] = useState<string[]>([
-    "SYSTEM: Macro data refinement files successfully loaded",
-  ]);
-  const [targetIndex, setTargetIndex] = useState<number | null>(null);
-  const [autoFlipCount, setAutoFlipCount] = useState(0);
-  const [autoFlipTotal, setAutoFlipTotal] = useState(0);
-  const [authorizedFolder, setAuthorizedFolder] = useState<string>("");
-
-  const terminalHistoryRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (terminalHistoryRef.current) {
-      terminalHistoryRef.current.scrollTop =
-        terminalHistoryRef.current.scrollHeight;
-    }
-  }, [terminalHistory]);
+  const [flipDirection, setFlipDirection] = useState<"forward" | "backward">("forward");
 
   const nextIndex = (currentIndex + 1) % sortedFolders.length;
+  const prevIndex = (currentIndex - 1 + sortedFolders.length) % sortedFolders.length;
   const currentFolder = sortedFolders[currentIndex].name;
   const nextFolder = sortedFolders[nextIndex].name;
+  const prevFolder = sortedFolders[prevIndex].name;
 
   const firstOccurrenceMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -109,27 +92,36 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (targetIndex !== null) return;
-      if (e.deltaY <= 0) {
-        e.preventDefault();
-        if (!alertMessage) {
-          setAlertMessage("Please only scroll downwards");
-          setTimeout(() => setAlertMessage(""), 2000);
+      e.preventDefault();
+
+      if (e.deltaY < 0) {
+        // Scroll up — flip backward
+        if (!isFlipping) {
+          playFlipSound();
+          setFlipDirection("backward");
+          setIsFlipping(true);
         }
+        const MAX_DELTA = 50;
+        const clampedDelta = Math.min(-e.deltaY, MAX_DELTA);
+        setBarsOffset((prev) => prev - clampedDelta * SCROLL_MULTIPLIER);
         return;
       }
-      e.preventDefault();
-      if (!isFlipping) {
-        const letter = currentFolder[0].toUpperCase();
-        playFlipSound();
-        if (firstOccurrenceMap.get(letter) === currentIndex) {
-          setRemovedTabs((prev) => new Set(prev).add(letter));
+
+      if (e.deltaY > 0) {
+        // Scroll down — flip forward
+        if (!isFlipping) {
+          const letter = currentFolder[0].toUpperCase();
+          playFlipSound();
+          if (firstOccurrenceMap.get(letter) === currentIndex) {
+            setRemovedTabs((prev) => new Set(prev).add(letter));
+          }
+          setFlipDirection("forward");
+          setIsFlipping(true);
         }
-        setIsFlipping(true);
+        const MAX_DELTA = 50;
+        const clampedDelta = Math.min(e.deltaY, MAX_DELTA);
+        setBarsOffset((prev) => prev + clampedDelta * SCROLL_MULTIPLIER);
       }
-      const MAX_DELTA = 50;
-      const clampedDelta = Math.min(e.deltaY, MAX_DELTA);
-      setBarsOffset((prev) => prev + clampedDelta * SCROLL_MULTIPLIER);
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
@@ -139,27 +131,38 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     currentIndex,
     currentFolder,
     firstOccurrenceMap,
-    alertMessage,
-    targetIndex,
   ]);
 
-  useEffect(() => {
-    if (targetIndex !== null) {
-      const intervalId = setInterval(() => {
-        setBarsOffset((prev) => prev + 5);
-      }, 30);
-      return () => clearInterval(intervalId);
-    }
-  }, [targetIndex]);
-
-  const flipDuration =
-    targetIndex !== null && autoFlipTotal > 0
-      ? autoFlipCount === 0 || autoFlipCount === autoFlipTotal - 1
-        ? 0.2
-        : 0.1
-      : 0.2;
+  const flipDuration = 0.2;
 
   const handleAnimationEnd = () => {
+    // === BACKWARD FLIP ===
+    if (flipDirection === "backward") {
+      const newIndex = (currentIndex - 1 + sortedFolders.length) % sortedFolders.length;
+
+      // Restore the letter tab for the folder being revealed
+      const newLetter = sortedFolders[newIndex].name[0].toUpperCase();
+      if (firstOccurrenceMap.get(newLetter) === newIndex) {
+        setRemovedTabs((prev) => {
+          const updated = new Set(prev);
+          updated.delete(newLetter);
+          return updated;
+        });
+      }
+
+      // Decrement bottom tab lifetimes (no new additions going backward)
+      setBottomTabs((prevTabs) =>
+        prevTabs
+          .map((tab) => ({ ...tab, lifetime: tab.lifetime - 1 }))
+          .filter((tab) => tab.lifetime > 0)
+      );
+
+      setCurrentIndex(newIndex);
+      setIsFlipping(false);
+      return;
+    }
+
+    // === FORWARD FLIP ===
     setBottomTabs((prevTabs) => {
       const updatedTabs = prevTabs
         .map((tab) => ({ ...tab, lifetime: tab.lifetime - 1 }))
@@ -186,138 +189,6 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
     const newIndex = (currentIndex + 1) % sortedFolders.length;
     setCurrentIndex(newIndex);
     setIsFlipping(false);
-
-    if (targetIndex !== null && newIndex !== targetIndex) {
-      let delay = 40;
-      if (autoFlipTotal > 2) {
-        const t = autoFlipCount / (autoFlipTotal - 1);
-        delay = 10 + 90 * Math.pow(2 * t - 1, 2);
-      }
-      const baseMin = 5,
-        baseMax = 100;
-      const tProgress =
-        autoFlipTotal > 1 ? autoFlipCount / (autoFlipTotal - 1) : 0;
-      const offsetIncrement =
-        baseMin + (baseMax - baseMin) * (1 - Math.pow(2 * tProgress - 1, 2));
-      setBarsOffset((prev) => prev + offsetIncrement);
-
-      setTimeout(() => {
-        const folderLetter = sortedFolders[newIndex].name[0].toUpperCase();
-        if (firstOccurrenceMap.get(folderLetter) === newIndex) {
-          setRemovedTabs((prev) => new Set(prev).add(folderLetter));
-        }
-        playFlipSound();
-        setIsFlipping(true);
-      }, delay);
-      setAutoFlipCount((prevCount) => prevCount + 1);
-    } else {
-      if (authorizedFolder) {
-        // Only add the success log if it isn’t already the last entry
-        setTerminalHistory((prev) => {
-          const lastLog = prev[prev.length - 1];
-          const newLog = `RESULT: File "${authorizedFolder}" loaded successfully.`;
-          if (lastLog === newLog) return prev;
-          return [...prev, newLog];
-        });
-      }
-      setTargetIndex(null);
-      setAutoFlipCount(0);
-      setAutoFlipTotal(0);
-    }
-  };
-
-  const handleTerminalSubmit = () => {
-    const input = terminalInput.trim();
-    if (!input) return;
-
-    if (input.toLowerCase().startsWith("cd ")) {
-      const folderName = input.substring(3).trim();
-      let auth = authorizedFolder;
-      if (!auth) {
-        const foundIndex = sortedFolders.findIndex(
-          (folder) => folder.name.toLowerCase() === folderName.toLowerCase()
-        );
-        if (foundIndex !== -1) {
-          auth = sortedFolders[foundIndex].name;
-          setAuthorizedFolder(auth);
-        }
-      }
-      if (auth && folderName.toLowerCase() === auth.toLowerCase()) {
-        setTerminalHistory((prev) => [
-          ...prev,
-          `QUERY: Changing directory to "${folderName}"...`,
-          `RESULT: Opening "${folderName}"...`,
-        ]);
-        if (onFolderSelect) onFolderSelect(folderName);
-      } else {
-        setTerminalHistory((prev) => [
-          ...prev,
-          `QUERY: ${input}`,
-          `RESULT: Access Denied.`,
-        ]);
-      }
-      setTerminalInput("");
-      return;
-    }
-
-    if (input.toLowerCase() === "open") {
-      if (
-        authorizedFolder &&
-        currentFolder.toLowerCase() === authorizedFolder.toLowerCase()
-      ) {
-        setTerminalHistory((prev) => [
-          ...prev,
-          `QUERY: open`,
-          `RESULT: Opening "${currentFolder}"...`,
-        ]);
-        if (onFolderSelect) onFolderSelect(currentFolder);
-      } else {
-        setTerminalHistory((prev) => [
-          ...prev,
-          `QUERY: open`,
-          `RESULT: Access Denied.`,
-        ]);
-      }
-      setTerminalInput("");
-      return;
-    }
-
-    const foundIndex = sortedFolders.findIndex(
-      (folder) => folder.name.toLowerCase() === input.toLowerCase()
-    );
-    if (foundIndex === -1) {
-      setTerminalHistory((prev) => [
-        ...prev,
-        `QUERY: Searching for "${input}"...`,
-        `RESULT: File "${input}" was not found.`,
-      ]);
-      setTerminalInput("");
-      return;
-    }
-    if (foundIndex === currentIndex) {
-      setTerminalHistory((prev) => [
-        ...prev,
-        `QUERY: Searching for "${input}"...`,
-        `RESULT: File "${input}" is already open.`,
-      ]);
-      setTerminalInput("");
-      return;
-    }
-    const steps =
-      (foundIndex - currentIndex + sortedFolders.length) % sortedFolders.length;
-    setAutoFlipTotal(steps);
-    setAutoFlipCount(0);
-    setTargetIndex(foundIndex);
-    setAuthorizedFolder(sortedFolders[foundIndex].name);
-    setTerminalHistory((prev) => [
-      ...prev,
-      `QUERY: Searching for "${input}"...`,
-    ]);
-    if (!isFlipping) {
-      playFlipSound();
-      setIsFlipping(true);
-    }
-    setTerminalInput("");
   };
 
   return (
@@ -332,24 +203,24 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           <span className="card-text">{nextFolder}</span>
         </div>
         <Card
-          currentFolder={currentFolder}
-          isFlipping={isFlipping}
+          currentFolder={flipDirection === "backward" && isFlipping ? prevFolder : currentFolder}
+          isFlipping={flipDirection === "forward" && isFlipping}
           flipDuration={flipDuration}
           firstOccurrenceMap={firstOccurrenceMap}
           folderTabOffsets={folderTabOffsets}
-          currentIndex={currentIndex}
+          currentIndex={flipDirection === "backward" && isFlipping ? prevIndex : currentIndex}
           onClick={() => {
             if (!isFlipping && onFolderSelect) onFolderSelect(currentFolder);
-            if (!isFlipping && currentFolder != authorizedFolder) {
-              setTerminalHistory((prev) => [
-                ...prev,
-                `POINTER ACTION: Opening "${currentFolder}"...`,
-                `RESULT: Access Denied.`,
-              ]);
-            }
           }}
           onAnimationEnd={handleAnimationEnd}
         />
+        {flipDirection === "backward" && isFlipping && (
+          <BackwardFlipCard
+            folderName={prevFolder}
+            flipDuration={flipDuration}
+            onAnimationEnd={handleAnimationEnd}
+          />
+        )}
         <BottomCard />
         <HingeBars barsOffset={barsOffset} />
         {bottomTabs.map((tab) => {
@@ -380,18 +251,6 @@ const HingedFolders: React.FC<HingedFoldersProps> = ({
           );
         })}
       </div>
-      <Terminal
-        terminalHistory={terminalHistory}
-        terminalInput={terminalInput}
-        onInputChange={(e) => setTerminalInput(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            handleTerminalSubmit();
-          }
-        }}
-        historyRef={terminalHistoryRef}
-      />
-      {alertMessage && <CustomAlert message={alertMessage} />}
     </div>
   );
 };

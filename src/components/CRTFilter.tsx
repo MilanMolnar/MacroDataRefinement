@@ -1,4 +1,6 @@
-const CRTFilterWrapper = ({ children }: any) => {
+import React from "react";
+
+const CRTFilterWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       {/* Define the SVG filter for a bloom (glow) effect */}

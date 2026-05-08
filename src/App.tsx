@@ -26,6 +26,14 @@ const defaultSettings: Settings = {
   shapePerType: 1,
 };
 
+// The design was built at 1920×1080. We scale the game canvas to fit the
+// current viewport while keeping the monitor image and all pixel-based
+// coordinate math in sync.
+const DESIGN_WIDTH = 1920;
+const DESIGN_HEIGHT = 1080;
+const MIN_SUPPORTED_WIDTH = 1280;
+const MIN_SUPPORTED_HEIGHT = 720;
+
 const severanceFolders: Folder[] = Folders;
 
 type AppStep = "boot" | "folders" | "layout";
@@ -84,7 +92,6 @@ const baseButtonStyle: React.CSSProperties = {
 
 const App: React.FC = () => {
   // State declarations
-  const [_, setPoweredOn] = useState(false);
   const [muted, setMuted] = useState(false);
   const [step, setStep] = useState<AppStep>("boot");
   const [userFolderName, setUserFolderName] = useState<string>("");
@@ -97,19 +104,61 @@ const App: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState("");
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showSounds, setShowSounds] = useState(false);
-  const [percentage, setPercentage] = useState<number>(0);
   const [userWon, setUserWon] = useState(false);
   const [bgMusic, setBgMusic] = useState<string>(bgMusicSrc);
   const [bgVolume, setBgVolume] = useState<number>(0.5);
   const [showMusicModal, setShowMusicModal] = useState(false);
+  const [monitorMode, setMonitorMode] = useState(true);
+  const [folderAlertMessage, setFolderAlertMessage] = useState("");
+  const [folderAlertKey, setFolderAlertKey] = useState(0);
 
   const mutedRef = useRef(muted);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const folderAlertTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const minWidth = 1800;
   const minHeight = 1000;
   const boxWidth = Math.max(settings.containerWidth, minWidth);
   const boxHeight = Math.max(settings.containerHeight, minHeight);
+
+  // --- Responsive scaling ---
+  const [viewportSize, setViewportSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Scale the design canvas down to fit the viewport, max 1:1 at 1920×1080.
+  const viewportScale = Math.min(
+    1.0,
+    Math.min(
+      viewportSize.width / DESIGN_WIDTH,
+      viewportSize.height / DESIGN_HEIGHT
+    )
+  );
+  // MDR Layout outer container is exactly (containerWidth+50) × (containerHeight+200) px.
+  // Use those dimensions for both the scale factor and the fullscreen canvas size.
+  const fsContentW = settings.containerWidth + 50;
+  const fsContentH = settings.containerHeight + 100;   // inner div height (not outer +200), so content fills viewport height
+  // Scale uniformly so the content fits within the viewport (aspect ratio preserved),
+  // then anchor to top-left so there is no margin on the left, top, or bottom.
+  const fullscreenScale = Math.min(
+    viewportSize.width / fsContentW,
+    viewportSize.height / fsContentH
+  );
+  // Center the scaled canvas horizontally within the viewport.
+  const fsOffsetX = (viewportSize.width - fsContentW * fullscreenScale) / 2;
+  const fsOffsetY = 0;
+  const tooSmall =
+    viewportSize.width < MIN_SUPPORTED_WIDTH ||
+    viewportSize.height < MIN_SUPPORTED_HEIGHT;
 
   // Side effects and event handlers
   useEffect(() => {
@@ -134,10 +183,6 @@ const App: React.FC = () => {
     mutedRef.current = muted;
     if (audioRef.current) audioRef.current.muted = muted;
   }, [muted]);
-
-  useEffect(() => {
-    setUserWon(percentage >= 100);
-  }, [percentage]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -175,6 +220,11 @@ const App: React.FC = () => {
   const handleFolderSelect = (selectedFolder: string) => {
     if (selectedFolder === userFolderName) {
       setStep("layout");
+    } else {
+      if (folderAlertTimeoutRef.current) clearTimeout(folderAlertTimeoutRef.current);
+      setFolderAlertKey((prev) => prev + 1);
+      setFolderAlertMessage("INSUFFICIENT CLEARANCE TO OPEN SELECTED FOLDER");
+      folderAlertTimeoutRef.current = setTimeout(() => setFolderAlertMessage(""), 1400);
     }
   };
 
@@ -187,7 +237,6 @@ const App: React.FC = () => {
     setStep("boot");
     setUserFolderName("");
     setLayoutKey(0);
-    setPercentage(0);
   };
 
   const handlePower = () => {
@@ -198,7 +247,6 @@ const App: React.FC = () => {
           console.error("Background music playback failed:", err)
         );
     }
-    setTimeout(() => setPoweredOn(true), 500);
   };
 
   const copyShareMessage = () => {
@@ -213,107 +261,186 @@ const App: React.FC = () => {
       );
   };
 
+
+
   return (
     <>
-      <div style={fullScreenCenterStyle}>
+      {/* ── Outer viewport shell ─────────────────────────────────────────── */}
+      <div
+        style={
+          monitorMode
+            ? fullScreenCenterStyle
+            : {
+                position: "fixed",
+                inset: 0,
+                overflow: "hidden",
+                backgroundColor: "black",
+              }
+        }>
+        {/* ── Scaled game canvas ─────────────────────────────────────────── */}
         <div
-          style={{
-            position: "relative",
-            width: `${boxWidth}px`,
-            height: `${boxHeight}px`,
-            overflow: "hidden",
-            backgroundColor: "transparent",
-            cursor: `${showCursor ? "none" : "pointer"}`,
-          }}>
-          <CRTFilterWrapper>
+          style={
+            monitorMode
+              ? {
+                  position: "relative",
+                  width: `${boxWidth * viewportScale}px`,
+                  height: `${boxHeight * viewportScale}px`,
+                  flexShrink: 0,
+                  overflow: "hidden",
+                }
+              : {
+                  position: "absolute",
+                  top: `${fsOffsetY}px`,
+                  left: `${fsOffsetX}px`,
+                  width: `${fsContentW}px`,
+                  height: `${fsContentH}px`,
+                  transform: `scale(${fullscreenScale})`,
+                  transformOrigin: "top left",
+                  overflow: "hidden",
+                  backgroundColor: "transparent",
+                  cursor: showCursor ? "none" : "pointer",
+                }
+          }>
+          {/* monitor mode has an extra inner div for its own scaling */}
+          {monitorMode ? (
             <div
               style={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                marginTop: 120,
-                flexDirection: "column",
-                transform: "translateX(192px)",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: `${boxWidth}px`,
+                height: `${boxHeight}px`,
+                transform: `scale(${viewportScale})`,
+                transformOrigin: "top left",
+                overflow: "hidden",
+                backgroundColor: "transparent",
+                cursor: showCursor ? "none" : "pointer",
               }}>
-              {step === "boot" && (
-                <div style={{ width: "100%", height: "100%" }}>
-                  <BootScreen
-                    onComplete={handleBootComplete}
-                    onPower={handlePower}
-                  />
-                </div>
-              )}
-              {step === "folders" && (
+              <CRTFilterWrapper>
                 <div
                   style={{
-                    backgroundColor: "black",
-                    height: "800px",
-                    width: "1050px",
-                  }}>
-                  <div style={{ textAlign: "center" }}>
-                    <HingedFolders
-                      folders={folderData}
-                      onFolderSelect={handleFolderSelect}
-                      highlightFolder={userWon ? userFolderName : undefined}
-                    />
-                  </div>
-                </div>
-              )}
-              {step === "layout" && (
-                <div
-                  style={{
-                    textAlign: "center",
                     width: "100%",
                     height: "100%",
+                    display: "flex",
+                    marginTop: 120,
+                    flexDirection: "column",
+                    transform: "translateX(192px)",
                   }}>
-                  <a
-                    href="https://buymeacoffee.com/milanmolnar"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "-360px",
-                      height: "120px",
-                      width: "100px",
-                      zIndex: 2995000,
-                      backgroundColor: "black",
-                      color: "white",
-                      border: "2px solid white",
-                      padding: "5px 10px",
-                      cursor: "pointer",
-                      fontFamily: "monospace",
-                    }}></a>
-                  <SeveranceMDRLayout
-                    headerText={userFolderName}
-                    percentage={percentage.toString()}
-                    key={layoutKey}
-                    settings={settings}
-                    onWin={() => setUserWon(true)}
-                  />
-                  <button
-                    onClick={handleRestart}
-                    style={{ ...baseButtonStyle, backgroundColor: "red" }}>
-                    Restart
-                  </button>
+                  {step === "boot" && (
+                    <div style={{ width: "100%", height: "100%" }}>
+                      <BootScreen
+                        onComplete={handleBootComplete}
+                        onPower={handlePower}
+                      />
+                    </div>
+                  )}
+                  {step === "folders" && (
+                    <div
+                      style={{
+                        backgroundColor: "black",
+                        height: "800px",
+                        width: "1050px",
+                        position: "relative",
+                      }}>
+                      <div style={{ textAlign: "center" }}>
+                        <HingedFolders
+                          folders={folderData}
+                          onFolderSelect={handleFolderSelect}
+                        />
+                      </div>
+                      {folderAlertMessage && (
+                        <CustomAlert key={folderAlertKey} message={folderAlertMessage} contained />
+                      )}
+                    </div>
+                  )}
+                  {step === "layout" && (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        width: "100%",
+                        height: "100%",
+                      }}>
+                      <SeveranceMDRLayout
+                        headerText={userFolderName}
+                        key={layoutKey}
+                        settings={settings}
+                        onWin={() => setUserWon(true)}
+                        viewportScale={viewportScale}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
+              </CRTFilterWrapper>
+              <img
+                src={borderImageSrc}
+                alt="App Border"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  pointerEvents: "none",
+                  zIndex: 3000,
+                  filter: "none",
+                }}
+              />
             </div>
-          </CRTFilterWrapper>
-          <img
-            src={borderImageSrc}
-            alt="App Border"
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              pointerEvents: "none",
-              zIndex: 3000,
-              filter: "none",
-            }}
-          />
+          ) : (
+            <CRTFilterWrapper>
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}>
+                {step === "boot" && (
+                  <div style={{ width: "100%", height: "100%" }}>
+                    <BootScreen
+                      onComplete={handleBootComplete}
+                      onPower={handlePower}
+                    />
+                  </div>
+                )}
+                {step === "folders" && (
+                  <div
+                    style={{
+                      backgroundColor: "black",
+                      height: "800px",
+                      width: "1050px",
+                      position: "relative",
+                    }}>
+                    <div style={{ textAlign: "center" }}>
+                      <HingedFolders
+                        folders={folderData}
+                        onFolderSelect={handleFolderSelect}
+                      />
+                    </div>
+                    {folderAlertMessage && (
+                      <CustomAlert key={folderAlertKey} message={folderAlertMessage} contained />
+                    )}
+                  </div>
+                )}
+                {step === "layout" && (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      width: "100%",
+                      height: "100%",
+                    }}>
+                    <SeveranceMDRLayout
+                      headerText={userFolderName}
+                      key={layoutKey}
+                      settings={settings}
+                      onWin={() => setUserWon(true)}
+                      viewportScale={fullscreenScale}
+                    />
+                  </div>
+                )}
+              </div>
+            </CRTFilterWrapper>
+          )}
         </div>
       </div>
 
@@ -420,7 +547,7 @@ const App: React.FC = () => {
                       setAlertMessage(
                         "You have not earned that special perk yet"
                       );
-                      setTimeout(() => setAlertMessage(""), 100);
+                      setTimeout(() => setAlertMessage(""), 2000);
                     }
                   }}
                   style={{
@@ -476,6 +603,79 @@ const App: React.FC = () => {
       {alertMessage && <CustomAlert message={alertMessage} />}
       <Analytics />
       {showCursor && <CustomCursor />}
+
+      {/* Monitor toggle — fixed to bottom-left corner */}
+      <button
+        onClick={() => setMonitorMode((prev) => !prev)}
+        title={monitorMode ? "Switch to fullscreen mode" : "Switch to monitor mode"}
+        style={{
+          position: "fixed",
+          bottom: "12px",
+          left: "12px",
+          zIndex: 999998,
+          background: "rgba(0,0,0,0.75)",
+          border: "1px solid #acecfc",
+          color: "#acecfc",
+          fontFamily: "monospace",
+          fontSize: "0.7rem",
+          padding: "4px 8px",
+          cursor: "pointer",
+          letterSpacing: "0.08em",
+          userSelect: "none",
+        }}>
+        {monitorMode ? "[ ] FULLSCREEN" : "[■] MONITOR"}
+      </button>
+
+      {/* Resolution warning — blocks gameplay when the viewport is below 720p.
+          Uses position:fixed outside the scaled game container so it always
+          fills the true viewport regardless of CSS transforms. */}
+      {tooSmall && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "#000",
+            zIndex: 999999,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            color: "#acecfc",
+            fontFamily: "monospace",
+            textAlign: "center",
+            gap: "12px",
+            padding: "20px",
+          }}>
+          <div style={{ fontSize: "1.4rem", letterSpacing: "0.15em" }}>
+            LUMON INDUSTRIES
+          </div>
+          <div
+            style={{ borderTop: "1px solid #acecfc", width: "320px" }}
+          />
+          <div style={{ fontSize: "1rem" }}>
+            WORKSTATION DISPLAY RESOLUTION INSUFFICIENT
+          </div>
+          <div
+            style={{ fontSize: "0.85rem", color: "#5a9fb0", marginTop: "8px" }}>
+            Minimum required: {MIN_SUPPORTED_WIDTH} × {MIN_SUPPORTED_HEIGHT}
+          </div>
+          <div style={{ fontSize: "0.85rem", color: "#5a9fb0" }}>
+            Current: {viewportSize.width} × {viewportSize.height}
+          </div>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              color: "#3a6f7e",
+              marginTop: "8px",
+              maxWidth: "420px",
+            }}>
+            Please resize your browser window to continue your important work.
+          </div>
+        </div>
+      )}
     </>
   );
 };

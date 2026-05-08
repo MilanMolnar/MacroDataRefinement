@@ -4,7 +4,6 @@ import LumonLogo from "./LumonLogo";
 interface HeaderProps {
   headerText: string;
   percentage: number;
-  logoUrl?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ headerText, percentage }) => {
